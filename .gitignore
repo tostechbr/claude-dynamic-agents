@@ -1,0 +1,29 @@
+# Claude Code local config (may contain tokens)
+.claude/settings.local.json
+.claude.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Run outputs (ephemeral, not for version control)
+workspace/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Secrets
+*.key
+*.pem
+*.p12
