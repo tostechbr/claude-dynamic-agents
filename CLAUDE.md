@@ -46,6 +46,9 @@ Agents communicate via `workspace/{run-id}/context.json`. Each agent reads exist
 - Task ambiguous → /tos runs brainstorm first, or use /plan for explicit dry-run
 - See `rules/failure-handling.md`
 
+### Monorepo mode
+When `/tos` is run inside this repo (detected by the presence of `.claude/agents/orchestrator.md`), generated projects go into `projects/{project-name}/` instead of the current working directory. Project name is inferred from the task in kebab-case. Git worktrees branch as `feat/{project-name}-{feature}` off this repo.
+
 ### Skills vs MCPs
 - **Skills** = contextual knowledge injected into agent reasoning (how to think)
 - **MCPs** = external tools the agent can call (what it can do)

@@ -82,8 +82,17 @@ For `low` and `medium` with no ambiguities: execute directly.
 
 ## Step 6 — Spawn agents and monitor
 
+**Detect target directory first:**
+
+| Condition | Mode | Generated code goes to |
+|-----------|------|------------------------|
+| `.claude/agents/orchestrator.md` exists in cwd | **Monorepo** | `projects/{project-name}/` |
+| Otherwise | **External** | Current working directory |
+
+In monorepo mode, infer project name from task in kebab-case (e.g. "build a todo app" → `projects/todo-app`). Pass `target_dir` to every agent via their `context` field.
+
 - Create `workspace/{run_id}/` folder
-- Initialize `workspace/{run_id}/context.json` with the plan
+- Initialize `workspace/{run_id}/context.json` with the plan and `target_dir`
 - Spawn agents per the ExecutionPlan
 - Monitor `context.json` for status updates
 - On failure: follow `rules/failure-handling.md`

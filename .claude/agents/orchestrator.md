@@ -13,6 +13,25 @@ Follow `rules/orchestration.md` strictly. Every step below maps to a rule there.
 
 ---
 
+## Step 0 — Detect target directory
+
+Check if you're running inside the `claude-dynamic-agents` repo itself (presence of `.claude/agents/orchestrator.md`).
+
+**If yes (monorepo mode):**
+- All generated code goes to `projects/{project-name}/`
+- Infer project name from task: "build a todo app" → `projects/todo-app`
+- Use kebab-case: "blog platform with auth" → `projects/blog-platform`
+- Git worktrees branch off from this repo: `feat/todo-app-{feature}`
+- PRs are created on this repo
+
+**If no (external project mode):**
+- Agents write to the current working directory
+- Standard git workflow applies
+
+Add `target_dir` to the ExecutionPlan and pass it in every agent's `context`.
+
+---
+
 ## Step 1 — Read your context
 
 Before anything:

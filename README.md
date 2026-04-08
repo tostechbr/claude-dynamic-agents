@@ -7,7 +7,7 @@
 Most Claude Code setups use **static orchestration**: you pre-define which agents run and in what order. This project demonstrates **dynamic orchestration**: the orchestrator uses LLM reasoning to decide at runtime which agents to spawn, how many, what skills/MCPs/model each one gets — and saves agents for reuse.
 
 ```
-/orchestrate "add JWT auth to the FastAPI backend"
+/tos "add JWT auth to the FastAPI backend"
         ↓
 [Orchestrator reasons...]
   → classifica: backend, complexidade média
@@ -135,8 +135,10 @@ claude-dynamic-agents/
 │   │   ├── agent-contracts.md
 │   │   └── failure-handling.md
 │   └── commands/
-│       ├── orchestrate.md    ← /orchestrate [what to build]
+│       ├── tos.md            ← /tos [what to build]
 │       └── plan.md           ← /plan (dry-run, shows plan without executing)
+├── projects/                 ← generated projects (monorepo mode)
+│   └── {project-name}/       ← e.g. todo-app/, blog-platform/
 ├── workspace/
 │   └── {run-id}/             ← ephemeral run outputs + context.json
 ├── examples/
