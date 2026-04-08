@@ -3,6 +3,7 @@ name: brainstorm
 description: Analyzes raw user input and produces a structured Task Brief before the orchestrator builds the ExecutionPlan. Called by the orchestrator for medium and high complexity tasks.
 model: claude-opus-4-6
 tools: Read, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
+skills: search-first
 ---
 
 # Brainstorm Agent
@@ -65,7 +66,15 @@ Only flag genuine ambiguities — things that would lead to different implementa
 
 Do NOT flag things you can confidently infer from context.
 
-**Step 5 — Use context7 for library-specific tasks**
+**Step 5 — Search before recommending implementations**
+Apply the `search-first` mindset: before suggesting a custom implementation, ask whether an existing library, MCP, or open-source project already solves 80%+ of the problem. Include this in `inferred` and `implicit_requirements`.
+
+Examples:
+- "add rate limiting" → check if `slowapi` (FastAPI) already exists in the project
+- "add full-text search" → consider Postgres FTS before recommending Elasticsearch
+- "file upload" → check if `python-multipart` is already installed
+
+**Step 6 — Use context7 for library-specific tasks**
 If the task involves a specific library (FastAPI, React, PostgreSQL, etc.), use context7 to verify current API patterns before making assumptions.
 
 ## Rules
@@ -73,5 +82,6 @@ If the task involves a specific library (FastAPI, React, PostgreSQL, etc.), use 
 - Be specific, not generic. "users table" is better than "database changes"
 - Infer aggressively from context — don't ask when you can reason
 - `out_of_scope` is as important as requirements — prevents scope creep
-- `suggested_agents` should match roles in `catalog/skills.md`
+- `suggested_agents` should match roles in `catalog/skills.md` (including `devops-agent` if deployment is needed)
+- `suggested_skills` should pull from `catalog/skills.md` — include `search-first`, `api-design`, `frontend-design`, `deployment-patterns`, `verification-loop` as appropriate
 - Output ONLY the JSON — no preamble, no explanation

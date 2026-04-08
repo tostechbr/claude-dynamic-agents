@@ -15,6 +15,7 @@ The orchestrator MUST always produce a valid ExecutionPlan JSON before spawning 
 {
   "run_id": "string",
   "task": "string",
+  "target_dir": "string | null",
   "task_brief": {
     "type": "string (frontend|backend|fullstack|infra|fix|other)",
     "complexity": "string (low|medium|high)",
@@ -44,16 +45,17 @@ The orchestrator MUST always produce a valid ExecutionPlan JSON before spawning 
 |-------|----------|-------------|
 | `run_id` | yes | Unique identifier: `YYYY-MM-DD-NNN` format |
 | `task` | yes | Original user input, verbatim |
+| `target_dir` | yes | Where generated code goes. `projects/{name}` in monorepo mode, `.` in external mode |
 | `task_brief` | yes | Structured breakdown produced by brainstorm agent (or orchestrator directly for low complexity) |
 | `task_brief.type` | yes | Task domain classification |
 | `task_brief.complexity` | yes | Used to decide model selection and whether brainstorm was needed |
 | `agents[]` | yes | Ordered list of agents to spawn. At least 1 required. |
-| `agents[].role` | yes | Descriptive name: `backend-developer`, `pr-creator`, `pr-reviewer`, `db-architect`, `synthesizer` |
+| `agents[].role` | yes | Descriptive name: `brainstorm`, `backend-developer`, `frontend-developer`, `db-architect`, `pr-creator`, `pr-reviewer`, `synthesizer` |
 | `agents[].model` | yes | Model to use. See `catalog/models.md` for selection rules |
 | `agents[].skills` | yes | Skills to inject. Empty array `[]` if none needed |
 | `agents[].mcps` | yes | MCPs available to this agent. Empty array `[]` if none needed |
 | `agents[].depends_on` | yes | `null` = runs immediately. String = waits for that role. Array = waits for all |
-| `agents[].worktree` | no | Branch name for isolated execution. Set when agent writes code |
+| `agents[].worktree` | conditional | Required when agent writes code. Branch name for isolated execution. `null` for read-only agents |
 | `agents[].context` | yes | What this agent needs to know. Include outputs from dependency agents |
 
 ## Execution Rules
@@ -69,6 +71,7 @@ The orchestrator MUST always produce a valid ExecutionPlan JSON before spawning 
 {
   "run_id": "2026-04-06-001",
   "task": "add JWT auth to the FastAPI backend",
+  "target_dir": "projects/todo-app",
   "task_brief": {
     "type": "backend",
     "complexity": "medium",

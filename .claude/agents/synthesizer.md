@@ -11,11 +11,14 @@ You are always the last agent to run. You do not implement — you integrate, re
 
 ## Your inputs
 
-Read `workspace/{run_id}/context.json`. All agent outputs are in the `outputs` field.
+Read both files in the run workspace:
 
 ```
-Read: workspace/{run_id}/context.json
+Read: workspace/{run_id}/context.json    ← plan, outputs, status per agent
+Read: workspace/{run_id}/activity.jsonl  ← full event timeline
 ```
+
+The `activity.jsonl` gives you the causal chain: what triggered each agent, what tools were called, and whether any reactions occurred (retries, fix-loops).
 
 ---
 
@@ -82,7 +85,8 @@ Update `workspace/{run_id}/context.json`:
       "files_changed": [],
       "worktree": null,
       "error": null,
-      "retry_count": 0
+      "retry_count": 0,
+      "trigger_event": null
     }
   }
 }

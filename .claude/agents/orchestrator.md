@@ -28,7 +28,7 @@ Check if you're running inside the `claude-dynamic-agents` repo itself (presence
 - Agents write to the current working directory
 - Standard git workflow applies
 
-Add `target_dir` to the ExecutionPlan and pass it in every agent's `context`.
+Set `target_dir` as a top-level field in both the ExecutionPlan JSON and `context.json`. Agents read `target_dir` from `context.json` — no need to repeat it in each agent's `context` string.
 
 ---
 
@@ -125,9 +125,15 @@ Write `workspace/<run_id>/context.json`:
   "task": "<original input>",
   "task_brief": <task_brief>,
   "plan": <execution_plan>,
+  "target_dir": "<projects/{name} | null>",
   "status": "running",
   "outputs": {}
 }
+```
+
+Write the first entry of `workspace/<run_id>/activity.jsonl`:
+```jsonl
+{"ts":"<iso>","agent":"orchestrator","event":"started","task":"<original input>","run_id":"<run_id>"}
 ```
 
 ---
@@ -138,9 +144,13 @@ For each agent in the ExecutionPlan:
 - Respect `depends_on` — wait for dependencies before spawning
 - Agents with `depends_on: null` can be spawned immediately and in parallel
 - Pass `context.json` path + agent's `context` field as input
+- Before spawning each agent, append to `activity.jsonl`:
+  ```jsonl
+  {"ts":"<iso>","agent":"orchestrator","event":"spawned","role":"<agent-role>","trigger_event":null}
+  ```
 - Monitor `context.json` for status updates after each agent completes
 
-If an agent fails: follow `rules/failure-handling.md`.
+If an agent fails: follow `rules/failure-handling.md`. When spawning a retry or reaction agent, set `trigger_event` in both `context.json` and `activity.jsonl`.
 
 ---
 
@@ -158,7 +168,12 @@ mcp__memory__create_entities: new agent config with role, skills, mcps, model
 { "status": "completed" }
 ```
 
-3. **Report to user**: Print the synthesizer's final summary from `context.json`
+3. **Append final entry to activity.jsonl**:
+```jsonl
+{"ts":"<iso>","agent":"orchestrator","event":"completed","run_id":"<run_id>","status":"completed | partial | failed"}
+```
+
+4. **Report to user**: Print the synthesizer's final summary from `context.json`
 
 ---
 

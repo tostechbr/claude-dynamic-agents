@@ -125,11 +125,22 @@ claude-dynamic-agents/
 │   ├── agents/
 │   │   ├── orchestrator.md   ← THE BRAIN
 │   │   └── synthesizer.md
-│   ├── skills/               ← skill implementations
+│   ├── skills/               ← skill implementations (15 installed)
 │   │   ├── execution-plan/
 │   │   ├── fastapi-patterns/
 │   │   ├── react-patterns/
-│   │   └── postgres-patterns/
+│   │   ├── postgres-patterns/
+│   │   ├── security-patterns/
+│   │   ├── frontend-design/
+│   │   ├── search-first/
+│   │   ├── agentic-engineering/
+│   │   ├── api-design/
+│   │   ├── deployment-patterns/
+│   │   ├── verification-loop/
+│   │   ├── using-git-worktrees/
+│   │   ├── dispatching-parallel-agents/
+│   │   ├── subagent-driven-development/
+│   │   └── workflow-orchestration-patterns/
 │   ├── rules/
 │   │   ├── orchestration.md
 │   │   ├── agent-contracts.md

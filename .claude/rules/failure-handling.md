@@ -11,38 +11,68 @@ Never swallow an error or mark a failed task as done.
 
 ---
 
-## Rule 2 — Agent failure retry
+## Rule 2 — Agent failure retry (Reaction: agent-failed)
 
-When an agent sets `status: "failed"`:
+**Trigger:** agent sets `status: "failed"` in `context.json`
+
+**Reaction routing:**
 
 ```
-retry_count == 0 → retry once with same config
-retry_count == 1 → escalate to user
+retry_count == 0:
+  → set trigger_event: "retry:failed(<role>) attempt=1"
+  → spawn same agent with original config + error appended to context
+  → append to activity.jsonl: {"event":"started","trigger_event":"retry:failed(<role>) attempt=1"}
+
+retry_count == 1:
+  → set status: "failed" (final)
+  → escalate to user (Rule 5)
 ```
 
-On retry: spawn the same agent with the original config plus the error message added to `context`.
+**Context passed to retry agent:**
+```json
+{
+  "retry_for": "<role>",
+  "previous_error": "<error from failed run>",
+  "files_changed_so_far": ["<any partial work>"]
+}
+```
 
 Never retry more than once automatically.
 
 ---
 
-## Rule 3 — PR reviewer rejection loop
+## Rule 3 — PR reviewer rejection loop (Reaction: pr-reviewer-rejected)
 
-When `pr-reviewer` sets `status: "rejected"`:
+**Trigger:** `pr-reviewer` sets `status: "rejected"` in `context.json`
+
+**Reaction routing:**
 
 ```
 round 1:
+  → set trigger_event: "reaction:pr-reviewer-rejected round=1"
   → spawn fix-agent with:
-      context: reviewer comments from context.json
       worktree: same branch as original code
-  → fix-agent pushes fixes
-  → spawn pr-reviewer again
+      context: {
+        "reviewer_comments": "<comments from context.json outputs.pr-reviewer.summary>",
+        "pr_url": "<url>",
+        "files_to_fix": "<files_changed from rejected agent>"
+      }
+  → fix-agent pushes fixes, appends done event to activity.jsonl
+  → spawn pr-reviewer again with trigger_event: "reaction:pr-reviewer-rejected round=1"
 
 round 2 (if still rejected):
-  → escalate to user with:
-      - original reviewer comments
-      - fix-agent changes
-      - remaining issues
+  → escalate to user (Rule 5) with:
+      - round 1 reviewer comments
+      - what fix-agent changed (files_changed)
+      - remaining issues from round 2 review
+```
+
+**activity.jsonl trace:**
+```jsonl
+{"agent":"pr-reviewer","event":"rejected","reason":"missing input validation"}
+{"agent":"fix-agent","event":"started","trigger_event":"reaction:pr-reviewer-rejected round=1"}
+{"agent":"fix-agent","event":"done","files_changed":["api/routes.py"]}
+{"agent":"pr-reviewer","event":"started","trigger_event":"reaction:pr-reviewer-rejected round=1"}
 ```
 
 Maximum 2 fix rounds. Never auto-merge a rejected PR.

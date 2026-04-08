@@ -43,6 +43,7 @@ Model selection directly impacts cost, speed, and quality. The orchestrator assi
 | `db-architect` | `sonnet` | Schema design requires quality reasoning |
 | `backend-developer` | `sonnet` | Multi-file code, correctness matters |
 | `frontend-developer` | `sonnet` | Component architecture, TypeScript |
+| `devops-agent` | `sonnet` | Docker, CI/CD, deployment config — precision required |
 | `pr-creator` | `haiku` | Mechanical: git commit + gh pr create |
 | `pr-reviewer` | `sonnet` | Needs to reason about code quality and security |
 | `synthesizer` | `sonnet` | Integrates all outputs, writes final summary |

@@ -38,7 +38,11 @@ The orchestrator checks the registry first before building from the catalog.
 - Task agents are ephemeral — spawned from catalog/registry, not stored as files
 
 ### Context propagation
-Agents communicate via `workspace/{run-id}/context.json`. Each agent reads existing outputs and writes its own summary. No agent reads another agent's files directly.
+Agents communicate via two files in `workspace/{run-id}/`:
+- `context.json` — single source of truth: plan, outputs, status per agent
+- `activity.jsonl` — append-only event log: one JSON object per line (started, tool_call, done, failed, blocked, rejected)
+
+No agent reads another agent's output files directly — only via `context.json`.
 
 ### Failure handling
 - Agent fails twice → escalate to user

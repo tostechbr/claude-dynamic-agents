@@ -29,14 +29,14 @@ Runs the full dynamic orchestration pipeline for any development task.
 4. Checks the **registry** for reusable agent configs
 5. Generates an **ExecutionPlan**
 6. Spawns specialized agents (in parallel or sequentially)
-7. Monitors execution via `workspace/{run_id}/context.json`
+7. Monitors execution via `workspace/{run_id}/context.json` + `activity.jsonl`
 8. **Synthesizer** aggregates all outputs
 9. Returns a final report with what was built, files changed, and PR URL if created
 
 ## Notes
 
 - For `high` complexity tasks, the orchestrator will show the plan and ask for confirmation first
-- Run outputs are saved to `workspace/{run_id}/` for full observability
+- Run outputs are saved to `workspace/{run_id}/` — `context.json` for state, `activity.jsonl` for the full event timeline
 - Use `/plan <task>` to preview the ExecutionPlan without executing
 
 ---
