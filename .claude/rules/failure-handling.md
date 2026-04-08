@@ -21,7 +21,6 @@ Never swallow an error or mark a failed task as done.
 retry_count == 0:
   → set trigger_event: "retry:failed(<role>) attempt=1"
   → spawn same agent with original config + error appended to context
-  → append to activity.jsonl: {"event":"started","trigger_event":"retry:failed(<role>) attempt=1"}
 
 retry_count == 1:
   → set status: "failed" (final)
@@ -57,7 +56,7 @@ round 1:
         "pr_url": "<url>",
         "files_to_fix": "<files_changed from rejected agent>"
       }
-  → fix-agent pushes fixes, appends done event to activity.jsonl
+  → fix-agent pushes fixes
   → spawn pr-reviewer again with trigger_event: "reaction:pr-reviewer-rejected round=1"
 
 round 2 (if still rejected):
@@ -65,14 +64,6 @@ round 2 (if still rejected):
       - round 1 reviewer comments
       - what fix-agent changed (files_changed)
       - remaining issues from round 2 review
-```
-
-**activity.jsonl trace:**
-```jsonl
-{"agent":"pr-reviewer","event":"rejected","reason":"missing input validation"}
-{"agent":"fix-agent","event":"started","trigger_event":"reaction:pr-reviewer-rejected round=1"}
-{"agent":"fix-agent","event":"done","files_changed":["api/routes.py"]}
-{"agent":"pr-reviewer","event":"started","trigger_event":"reaction:pr-reviewer-rejected round=1"}
 ```
 
 Maximum 2 fix rounds. Never auto-merge a rejected PR.

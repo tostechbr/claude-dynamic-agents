@@ -87,6 +87,7 @@ Primary use: the orchestrator reads/writes the agent registry via memory MCP.
 | `db-architect` | `filesystem`, `context7` |
 | `backend-developer` | `filesystem`, `context7` |
 | `frontend-developer` | `filesystem`, `context7` |
+| `devops-agent` | `filesystem` |
 | `pr-creator` | `filesystem`, `github` |
 | `pr-reviewer` | `github`, `context7` |
 | `synthesizer` | `filesystem` |

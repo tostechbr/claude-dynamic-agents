@@ -11,14 +11,13 @@ You are always the last agent to run. You do not implement — you integrate, re
 
 ## Your inputs
 
-Read both files in the run workspace:
+Read the run workspace:
 
 ```
-Read: workspace/{run_id}/context.json    ← plan, outputs, status per agent
-Read: workspace/{run_id}/activity.jsonl  ← full event timeline
+Read: workspace/{run_id}/context.json
 ```
 
-The `activity.jsonl` gives you the causal chain: what triggered each agent, what tools were called, and whether any reactions occurred (retries, fix-loops).
+All agent outputs, statuses, file changes, and causal chain (`trigger_event`) are in the `outputs` field.
 
 ---
 

@@ -20,39 +20,50 @@ The catalog is the orchestrator's palette. Instead of pre-assigning skills/MCPs/
 └── models.md    ← when to use haiku / sonnet / opus
 ```
 
-## Two types of skills
+## Installed skills (15 total)
 
-Skills can be local (in this repo) or from the marketplace (installed via skillfish):
+All skills live in `.claude/skills/`. The orchestrator assigns them per agent role.
+
+**Local skills (custom for this project):**
+
+| Skill | When to use |
+|-------|-------------|
+| `execution-plan` | Orchestrator only — defines the JSON plan schema |
+| `fastapi-patterns` | Backend agents writing or reviewing FastAPI code |
+| `react-patterns` | Frontend agents writing or reviewing React/TypeScript |
+| `postgres-patterns` | DB agents designing schemas, migrations, or queries |
+| `security-patterns` | Any agent handling auth, input validation, sensitive data |
+
+**Community skills (installed via skillfish / Anthropic):**
+
+| Skill | Source | When to use |
+|-------|--------|-------------|
+| `frontend-design` | Anthropic | Frontend agent — distinctive UIs, avoids AI slop aesthetics |
+| `search-first` | affaan-m/everything-claude-code | Brainstorm + coding agents — research before implementing |
+| `agentic-engineering` | affaan-m/everything-claude-code | Orchestrator — eval-first cycles, cost-aware model routing |
+| `api-design` | affaan-m/everything-claude-code | Backend agent — REST naming, status codes, versioning |
+| `deployment-patterns` | affaan-m/everything-claude-code | Devops agent — Docker, CI/CD, production deployments |
+| `verification-loop` | affaan-m/everything-claude-code | PR reviewer + synthesizer — multi-stage quality assurance |
+| `using-git-worktrees` | Antigravity | Any code-writing agent needing branch isolation |
+| `dispatching-parallel-agents` | Antigravity | Orchestrator — spawning independent sub-tasks in parallel |
+| `subagent-driven-development` | Antigravity | Orchestrator — multi-step implementation plans |
+| `workflow-orchestration-patterns` | Antigravity | Orchestrator — durable, sequential workflow design |
+
+## Available MCPs
+
+| MCP | Tools | When to use |
+|-----|-------|-------------|
+| `filesystem` | read, write, edit, list files | Any agent that reads or writes files |
+| `github` | create PR, review, list commits | `pr-creator`, `pr-reviewer` |
+| `context7` | fetch live library docs | Any agent working with specific lib versions |
+| `memory` | read/write agent registry | `orchestrator` only |
+
+## Model selection
 
 ```
-local:
-  fastapi-patterns   → .claude/skills/fastapi-patterns/SKILL.md
-  react-patterns     → .claude/skills/react-patterns/SKILL.md
-  postgres-patterns  → .claude/skills/postgres-patterns/SKILL.md
-  security-patterns  → .claude/skills/security-patterns/SKILL.md
-
-marketplace:
-  gh-issues          → openclaw/gh-issues (automates GitHub issue lifecycle)
-  agentic-engineering → affaan-m/agentic-engineering (eval-first execution loop)
-  coding-orchestrator → openclaw/coding-agent (background agents + worktrees)
-```
-
-The orchestrator selects from both. Marketplace skills must be installed first.
-
-## mcps.md (example entries)
-
-```
-filesystem   → read/write files on disk (almost always needed)
-github       → gh CLI: create PRs, branches, review comments
-database     → direct DB access for schema inspection
-```
-
-## models.md (selection rules)
-
-```
-haiku    → simple, repetitive tasks (boilerplate, formatting, pr-creator)
-sonnet   → most coding tasks, multi-file changes, review
-opus     → orchestrator itself, complex architectural decisions
+haiku    → simple, mechanical tasks (pr-creator: git commit + gh pr create)
+sonnet   → most coding tasks, multi-file changes, review, synthesis
+opus     → orchestrator + brainstorm (deep reasoning, task decomposition)
 ```
 
 ## How the orchestrator uses it
@@ -63,8 +74,8 @@ The orchestrator reads the catalog as part of its context, then assigns each age
 {
   "role": "backend-developer",
   "model": "sonnet",
-  "skills": ["fastapi-patterns", "security-patterns"],
-  "mcps": ["filesystem", "github"]
+  "skills": ["fastapi-patterns", "api-design", "security-patterns", "using-git-worktrees"],
+  "mcps": ["filesystem", "context7"]
 }
 ```
 

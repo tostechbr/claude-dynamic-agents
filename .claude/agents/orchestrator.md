@@ -131,11 +131,6 @@ Write `workspace/<run_id>/context.json`:
 }
 ```
 
-Write the first entry of `workspace/<run_id>/activity.jsonl`:
-```jsonl
-{"ts":"<iso>","agent":"orchestrator","event":"started","task":"<original input>","run_id":"<run_id>"}
-```
-
 ---
 
 ## Step 8 — Spawn agents
@@ -144,13 +139,9 @@ For each agent in the ExecutionPlan:
 - Respect `depends_on` — wait for dependencies before spawning
 - Agents with `depends_on: null` can be spawned immediately and in parallel
 - Pass `context.json` path + agent's `context` field as input
-- Before spawning each agent, append to `activity.jsonl`:
-  ```jsonl
-  {"ts":"<iso>","agent":"orchestrator","event":"spawned","role":"<agent-role>","trigger_event":null}
-  ```
 - Monitor `context.json` for status updates after each agent completes
 
-If an agent fails: follow `rules/failure-handling.md`. When spawning a retry or reaction agent, set `trigger_event` in both `context.json` and `activity.jsonl`.
+If an agent fails: follow `rules/failure-handling.md`. When spawning a retry or reaction agent, set `trigger_event` in the spawned agent's `context.json` output entry.
 
 ---
 
@@ -168,12 +159,7 @@ mcp__memory__create_entities: new agent config with role, skills, mcps, model
 { "status": "completed" }
 ```
 
-3. **Append final entry to activity.jsonl**:
-```jsonl
-{"ts":"<iso>","agent":"orchestrator","event":"completed","run_id":"<run_id>","status":"completed | partial | failed"}
-```
-
-4. **Report to user**: Print the synthesizer's final summary from `context.json`
+3. **Report to user**: Print the synthesizer's final summary from `context.json`
 
 ---
 

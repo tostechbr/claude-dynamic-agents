@@ -89,10 +89,10 @@ For `low` and `medium` with no ambiguities: execute directly.
 | `.claude/agents/orchestrator.md` exists in cwd | **Monorepo** | `projects/{project-name}/` |
 | Otherwise | **External** | Current working directory |
 
-In monorepo mode, infer project name from task in kebab-case (e.g. "build a todo app" → `projects/todo-app`). Pass `target_dir` to every agent via their `context` field.
+In monorepo mode, infer project name from task in kebab-case (e.g. "build a todo app" → `projects/todo-app`). Set `target_dir` as a top-level field in `context.json` — agents read it from there, no need to repeat it in each agent's `context` string.
 
 - Create `workspace/{run_id}/` folder
-- Initialize `workspace/{run_id}/context.json` with the plan and `target_dir`
+- Initialize `workspace/{run_id}/context.json` with the plan, `target_dir`, and `status: "running"`
 - Spawn agents per the ExecutionPlan
 - Monitor `context.json` for status updates
 - On failure: follow `rules/failure-handling.md`
@@ -103,5 +103,5 @@ In monorepo mode, infer project name from task in kebab-case (e.g. "build a todo
 
 After synthesizer completes:
 1. Save successful agent configs to `registry/index.md`
-2. Write final summary to `workspace/{run_id}/context.json`
+2. Update `context.json` with `status: "completed | partial | failed"`
 3. Report run result to the user

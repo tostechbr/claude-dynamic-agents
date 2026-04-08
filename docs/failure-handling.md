@@ -2,22 +2,6 @@
 
 What happens when something goes wrong.
 
-## Eval-first: capture failures before implementing
-
-Inspired by the Agentic Engineering pattern: before spawning implementation agents, spawn an eval agent that identifies failure signatures upfront.
-
-```
-task entra
-  → [eval-agent] analisa o task
-      - o que pode dar errado?
-      - quais edge cases existem?
-      - quais dependências podem falhar?
-  → orchestrator incorpora os riscos no ExecutionPlan
-  → implementação começa com contexto de riscos conhecidos
-```
-
-This prevents the most common failure modes before they happen.
-
 ## Failure scenarios
 
 ### 1. Agent fails mid-task
@@ -26,8 +10,8 @@ The agent errors out or produces invalid output.
 
 ```
 orchestrator detects failure via context.json status: "failed"
-  → retries once with same config
-  → if fails again → escala para o usuário com context do erro
+  → retries once with same config + error message added to context
+  → if fails again → escalates to user with full error context
 ```
 
 ### 2. PR reviewer rejects
@@ -35,12 +19,14 @@ orchestrator detects failure via context.json status: "failed"
 The pr-reviewer finds critical issues.
 
 ```
-pr-reviewer → status: "rejected", issues: [...]
+pr-reviewer → status: "rejected"
   → fix-loop:
-      orchestrator spawns fix-agent with the review issues as context
-      fix-agent pushes fixes to the same worktree branch
-      pr-reviewer runs again (max 2 retry rounds)
-  → if still rejected after retries → escala para o usuário
+      orchestrator spawns fix-agent
+        context: reviewer comments from context.json
+        worktree: same branch as original code
+      fix-agent pushes fixes
+      pr-reviewer runs again (max 2 rounds)
+  → if still rejected after 2 rounds → escalates to user
 ```
 
 ### 3. Worktree conflict
@@ -48,29 +34,28 @@ pr-reviewer → status: "rejected", issues: [...]
 Two parallel agents modify the same file.
 
 ```
-worktree conflict detected at merge
-  → synthesizer receives both versions + conflict context
-  → synthesizer resolves conflict and produces merged output
-  → if ambiguous → escala para o usuário
+conflict detected → both versions passed to synthesizer with conflict flag
+  → synthesizer resolves if possible
+  → if ambiguous → escalates to user
 ```
 
-### 4. Task too complex
+### 4. Task too complex or ambiguous
 
-The orchestrator cannot confidently decompose the task.
+The orchestrator is not confident about the decomposition.
 
 ```
-orchestrator → confidence: "low"
-  → runs /plan (dry-run mode) and shows the proposed plan to the user
-  → waits for user confirmation before executing
+orchestrator → complexity: "high" OR confidence: "low"
+  → runs /plan dry-run and shows proposed ExecutionPlan to user
+  → waits for confirmation before spawning agents
 ```
 
-## Escalation rules
+## Escalation conditions
 
-The orchestrator escalates (stops and asks the user) when:
+The orchestrator stops and asks the user when:
 - An agent fails twice in a row
 - The pr-reviewer rejects after 2 fix rounds
 - A worktree conflict cannot be auto-resolved
-- Task complexity is ambiguous
+- Task complexity is high and confidence is low
 - A destructive action is about to happen (e.g., force push to main)
 
 ## context.json failure format
@@ -80,14 +65,21 @@ The orchestrator escalates (stops and asks the user) when:
   "outputs": {
     "backend-developer": {
       "status": "failed",
-      "error": "Could not resolve import: app.database",
+      "summary": "Attempted to implement JWT auth — failed on database import resolution",
+      "files_changed": [],
+      "worktree": "feat/fastapi-backend-jwt-auth",
+      "error": "Could not resolve import: app.database — module not found",
       "retry_count": 1,
-      "worktree": "feat/jwt-auth-backend"
+      "trigger_event": null
     }
   }
 }
 ```
 
+## Partial success
+
+If some agents succeeded and one failed, the orchestrator does not discard the successful work. Successful outputs remain in `context.json` with `status: "done"`. Only the failed component is escalated.
+
 ## Design principle
 
-Fail loud, not silent. Every failure is visible in `context.json` and surfaced to the user if unrecoverable.
+Fail loud, not silent. Every failure is immediately written to `context.json` and surfaced to the user if unrecoverable. No silent swallowing of errors.

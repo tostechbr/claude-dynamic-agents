@@ -4,20 +4,16 @@ Rules every agent MUST follow for inter-agent communication.
 
 ---
 
-## The shared state: context.json + activity.jsonl
+## The shared state: context.json
 
-Every run has two shared files at `workspace/{run_id}/`:
-
-| File | Purpose |
-|------|---------|
-| `context.json` | Single source of truth — plan, outputs, status |
-| `activity.jsonl` | Append-only event log — one JSON object per line |
+Every run has a single source of truth at `workspace/{run_id}/context.json`.
 
 **Agents MUST:**
 - Read `context.json` before starting their task
 - Write their output summary to `context.json` when done
-- Append events to `activity.jsonl` at key moments (start, tool calls, done, error)
 - Never read another agent's output files directly — only via `context.json`
+
+For run observability (traces, tool calls, subagent nesting), see `docs/observability.md`.
 
 ---
 
@@ -67,7 +63,7 @@ When an agent is retried or spawned as a reaction to an event, set `trigger_even
 "trigger_event": null   ← normal first-time spawn
 ```
 
-This makes the activity log traceable without reading full context.
+This makes the causal chain readable in `context.json` without needing an external log.
 
 ---
 
@@ -76,15 +72,13 @@ This makes the activity log traceable without reading full context.
 ### Before starting
 Every agent MUST read `context.json` and:
 1. Set own status to `"running"`
-2. Append to `activity.jsonl`: `{"ts":"<iso>","agent":"<role>","event":"started","trigger_event":"<value or null>"}`
-3. Read outputs of all `depends_on` agents for context
-4. Check if any dependency has `status: "failed"` → set own status to `"blocked"`, append `blocked` event, stop
+2. Read outputs of all `depends_on` agents for context
+3. Check if any dependency has `status: "failed"` → set own status to `"blocked"`, stop and report
 
 ### After completing
-Every agent MUST update `context.json` and append to `activity.jsonl`:
+Every agent MUST update `context.json`:
 
 ```json
-// context.json update
 {
   "outputs": {
     "{my-role}": {
@@ -100,14 +94,8 @@ Every agent MUST update `context.json` and append to `activity.jsonl`:
 }
 ```
 
-```jsonl
-// activity.jsonl append
-{"ts":"<iso>","agent":"<role>","event":"done","files_changed":["path/to/file.py"]}
-```
-
 ### On failure
 ```json
-// context.json update
 {
   "outputs": {
     "{my-role}": {
@@ -121,11 +109,6 @@ Every agent MUST update `context.json` and append to `activity.jsonl`:
     }
   }
 }
-```
-
-```jsonl
-// activity.jsonl append
-{"ts":"<iso>","agent":"<role>","event":"failed","error":"specific error message","retry_count":1}
 ```
 
 ---
@@ -147,33 +130,9 @@ The `summary` field is the primary way agents communicate with each other.
 
 ---
 
-## activity.jsonl format
-
-Append-only file. One JSON object per line. Never overwrite.
-
-**Standard events:**
-
-```jsonl
-{"ts":"2026-04-07T10:00:00Z","agent":"backend-developer","event":"started","trigger_event":null}
-{"ts":"2026-04-07T10:01:30Z","agent":"backend-developer","event":"tool_call","tool":"Write","file":"auth/jwt.py"}
-{"ts":"2026-04-07T10:04:00Z","agent":"backend-developer","event":"done","files_changed":["auth/jwt.py","auth/middleware.py"]}
-{"ts":"2026-04-07T10:05:00Z","agent":"pr-reviewer","event":"started","trigger_event":null}
-{"ts":"2026-04-07T10:06:00Z","agent":"pr-reviewer","event":"rejected","reason":"missing rate limiting on /login"}
-{"ts":"2026-04-07T10:06:01Z","agent":"fix-agent","event":"started","trigger_event":"reaction:pr-reviewer-rejected round=1"}
-{"ts":"2026-04-07T10:08:00Z","agent":"fix-agent","event":"done","files_changed":["auth/routes.py"]}
-```
-
-**Rules:**
-- `ts` is always ISO 8601 UTC
-- `agent` matches the `role` in the ExecutionPlan
-- `event` is one of: `started | tool_call | done | failed | blocked | waiting_input | rejected`
-- Optional fields depend on event type
-
----
-
 ## Synthesizer contract
 
-The synthesizer reads ALL `outputs` from `context.json` and `activity.jsonl` and produces:
+The synthesizer reads ALL `outputs` from `context.json` and produces:
 - A final summary of what was built
 - Integration points between components
 - Any warnings or unresolved issues

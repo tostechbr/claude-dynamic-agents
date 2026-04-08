@@ -100,7 +100,11 @@ The orchestrator always produces a JSON plan before spawning:
 
 ### 4. Context propagation
 
-Agents share state via `workspace/{run-id}/context.json`. No agent reads another agent's files directly.
+Agents share state via two files in `workspace/{run-id}/`:
+- `context.json` — single source of truth: plan, outputs, status per agent
+- `activity.jsonl` — append-only event log for full run observability
+
+No agent reads another agent's output files directly — only via `context.json`.
 
 ### 5. Failure handling
 
