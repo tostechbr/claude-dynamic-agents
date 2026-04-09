@@ -34,3 +34,4 @@ Update `context.json` outputs for your role — follow `rules/agent-contracts.md
 | Date | Run ID | Task | Skills | Result |
 |------|--------|------|--------|--------|
 | 2026-04-08 | 2026-04-08-001 | FastAPI todo-app backend (POST/GET /tasks, in-memory) | fastapi-patterns, api-design, security-patterns | success |
+| 2026-04-09 | 2026-04-09-007 | Add SQLite persistence to todo-app backend (aiosqlite) | fastapi-patterns, api-design, security-patterns | success |

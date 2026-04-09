@@ -43,3 +43,4 @@ Update `context.json` outputs for your role — follow `rules/agent-contracts.md
 | Date | Run ID | Task | Skills | Result |
 |------|--------|------|--------|--------|
 | 2026-04-09 | 2026-04-09-003 | React frontend for todo-app (TaskList, TaskForm, Vite + TS) | react-patterns, frontend-design | success |
+| 2026-04-09 | 2026-04-09-006 | Dark mode toggle for todo-app (useDarkMode hook, DarkModeToggle component, CSS custom properties) | react-patterns, frontend-design | success |

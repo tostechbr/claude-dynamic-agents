@@ -47,3 +47,5 @@ The decision to merge or reject is the human's. Your job is to surface findings,
 | Date | Run ID | Task | Skills | Result |
 |------|--------|------|--------|--------|
 | 2026-04-09 | 2026-04-09-005 | Review PR #5 (React frontend) | security-patterns, verification-loop | success |
+| 2026-04-09 | 2026-04-09-006 | Review dark mode toggle (blocked: no PR created) | security-patterns, verification-loop | blocked |
+| 2026-04-09 | 2026-04-09-007 | Review PR #7 (SQLite persistence) — 1 MEDIUM, 3 LOW findings | security-patterns, verification-loop | success |
