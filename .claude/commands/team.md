@@ -44,7 +44,9 @@ Log your decision:
 
 ---
 
-## Step 3 — Check the registry for each role
+## Step 3 — Check the registry and load relevant skills
+
+### 3a — Check registry for each role
 
 For each role you decided on, check if a definition already exists:
 
@@ -62,7 +64,33 @@ Read: .claude/agents/{role}.md
 → You will pass the full definition when spawning the teammate
 → After the run, save it to `.claude/agents/{role}.md`
 
-### Inline agent template (for new roles)
+### 3b — Load relevant skills for each role
+
+> ⚠️ IMPORTANT: The `skills:` frontmatter field does NOT work for teammates.
+> You must read skill content and inject it directly into the spawn prompt.
+
+For each role, identify which skills apply and read them:
+
+| If role involves... | Read these skills |
+|---|---|
+| FastAPI / Python backend | `.claude/skills/fastapi-patterns/SKILL.md` + `.claude/skills/api-design/SKILL.md` |
+| React / TypeScript frontend | `.claude/skills/react-patterns/SKILL.md` + `.claude/skills/frontend-design/SKILL.md` |
+| Security / auth / input validation | `.claude/skills/security-patterns/SKILL.md` |
+| PostgreSQL / database | `.claude/skills/postgres-patterns/SKILL.md` |
+| Deployment / Docker / CI | `.claude/skills/deployment-patterns/SKILL.md` |
+| Code review / quality gates | `.claude/skills/verification-loop/SKILL.md` |
+| Research / brainstorm | `.claude/skills/search-first/SKILL.md` |
+
+Read only the skills that are relevant — do not inject all of them blindly.
+
+Log for each role:
+```
+📚 {role} — injecting skills: {skill1}, {skill2}
+```
+
+### 3c — Inline agent template (for new roles)
+
+When building a new role dynamically, include the skill content in the body:
 
 ```
 ---
@@ -74,6 +102,10 @@ tools: Read, Grep, Glob
 
 You are a {role}. {What you do and why it matters}.
 
+## Domain knowledge
+
+{paste the full content of each relevant SKILL.md here}
+
 ## Your focus
 
 {3-5 bullet points of exactly what to look for or investigate}
@@ -81,17 +113,13 @@ You are a {role}. {What you do and why it matters}.
 ## Report format
 
 For each finding:
-```
 [CATEGORY] Location — Issue
 Impact: why this matters
 Recommendation: what to do
-```
 
 End with:
-```
 {Role} Score: X/10
 Top finding: [one sentence]
-```
 
 ## After your analysis
 
@@ -106,12 +134,16 @@ Create an agent team for: `$ARGUMENTS`
 
 Spawn the teammates you decided on. For each one:
 
-**If the agent exists in `.claude/agents/`:**
+**If the agent exists in `.claude/agents/` (loaded from registry):**
 ```
 Spawn a teammate using the {role} agent type to {specific task + target}.
+
+In addition to your definition, apply this domain knowledge:
+
+{paste content of each relevant SKILL.md}
 ```
 
-**If the agent was built inline:**
+**If the agent was built inline (new role):**
 ```
 Spawn a teammate with the following definition to {specific task + target}:
 
@@ -122,7 +154,7 @@ model: claude-sonnet-4-6
 tools: Read, Grep, Glob
 ---
 
-{full body from template above}
+{full body including Domain knowledge section with skill content injected}
 ```
 
 ### Coordination instructions for the team
