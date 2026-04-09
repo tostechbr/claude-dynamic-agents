@@ -1,43 +1,54 @@
 ---
-description: Dynamic agent orchestration — analyzes your task, builds an ExecutionPlan, and spawns specialized agents to carry it out.
+description: Dynamic agent orchestration — spawns the orchestrator as a subagent to analyze your task, build an ExecutionPlan, and coordinate specialized agents.
 ---
 
 # /tos
 
-Runs the full dynamic orchestration pipeline for any development task.
+## What you must do — exactly in this order
 
-## Usage
+1. Read the full content of `.claude/agents/orchestrator.md`
+2. Use the **`Agent` tool** to spawn the orchestrator as a subagent — pass the full file content as the agent prompt, followed by the task below
+3. Wait for the orchestrator subagent to complete
+4. Report the final result to the user
+
+## ⚠️ CRITICAL: use the Agent tool, not Bash
 
 ```
-/tos <task description>
+✅ CORRECT — use this:
+Agent(
+  [full content of .claude/agents/orchestrator.md]
+
+  ---
+  ## Task
+  $ARGUMENTS
+
+  ## Run context
+  Working directory: <cwd>
+  Today's date: <date>
+)
+
+❌ WRONG — never do this:
+Bash("claude -p '...'")
+Bash(PROMPT='...' claude ...)
 ```
 
-## Examples
+The Agent tool creates a proper nested subagent that appears in LangSmith traces with the correct name (`orchestrator`). Bash creates an invisible isolated process with no tracing.
 
-```
-/tos add JWT auth to the FastAPI backend
-/tos create a submit button component with tests
-/tos build a user profile page with avatar upload
-/tos fix the 500 error on the /users endpoint
-```
+## Why this matters
 
-## What happens
+- `Agent` tool → subagents appear nested in LangSmith: `orchestrator → frontend-developer → pr-creator`
+- `Bash(claude -p)` → runs in isolation, no nesting, no naming in LangSmith
 
-1. The **orchestrator** receives your task
-2. Classifies complexity and type
-3. Optionally runs **brainstorm** to structure requirements
-4. Checks the **registry** for reusable agent configs
-5. Generates an **ExecutionPlan**
-6. Spawns specialized agents (in parallel or sequentially)
-7. Monitors execution via `workspace/{run_id}/context.json`
-8. **Synthesizer** aggregates all outputs
-9. Returns a final report with what was built, files changed, and PR URL if created
+## After spawning
 
-## Notes
-
-- For `high` complexity tasks, the orchestrator will show the plan and ask for confirmation first
-- Run outputs are saved to `workspace/{run_id}/` — `context.json` is the shared state; `activity.jsonl` is an append-only event log for observability
-- Use `/plan <task>` to preview the ExecutionPlan without executing
+The orchestrator handles everything from here:
+- Classifies the task
+- Checks the registry for reusable agents
+- Generates an ExecutionPlan
+- Spawns specialized subagents (each via Agent tool)
+- Monitors `workspace/{run_id}/context.json`
+- Runs the synthesizer last
+- Reports back to you
 
 ---
 
