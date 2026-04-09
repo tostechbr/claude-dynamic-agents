@@ -140,6 +140,23 @@ When a PR is created, the `summary` field MUST include the `pull_number` and ful
 
 The pr-reviewer reads this summary to call `mcp__github__create_pull_request_review`.
 
+### ⚠️ Always use `mcp__github__create_pull_request` — NEVER `gh pr create`
+
+The `gh` CLI requires local authentication (`gh auth login`) which may not be configured on the host machine.
+The GitHub MCP uses a server token and always works.
+
+```
+✅ mcp__github__create_pull_request(owner, repo, title, head, base, body)
+❌ Bash("gh pr create ...")
+```
+
+To get `owner` and `repo`, read from git remote:
+```bash
+git remote get-url origin
+# → https://github.com/tostechbr/claude-dynamic-agents.git
+# owner = tostechbr, repo = claude-dynamic-agents
+```
+
 ---
 
 ## pr-reviewer contract
