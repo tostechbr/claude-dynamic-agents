@@ -364,3 +364,4 @@ async def test_delete_task_double_delete(client: httpx.AsyncClient) -> None:
 
     assert first_delete.status_code == 204
     assert second_delete.status_code == 404
+
