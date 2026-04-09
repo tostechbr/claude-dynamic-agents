@@ -14,6 +14,9 @@ Dynamic agents are saved as `.md` files directly inside `.claude/agents/` — th
     ├── synthesizer.md        ← permanent
     ├── backend-developer.md  ← saved after run 2026-04-08-001
     ├── test-developer.md     ← saved after run 2026-04-08-002
+    ├── frontend-developer.md ← saved after run 2026-04-09-003
+    ├── pr-creator.md         ← saved after run 2026-04-09-005
+    ├── pr-reviewer.md        ← saved after run 2026-04-09-005
     └── ...                   ← new roles saved after each successful run
 ```
 
@@ -93,4 +96,6 @@ Always include standard tools: `Read, Write, Edit, Bash`
 |-------|------|-------|-----------|-----------|
 | `backend-developer` | [../agents/backend-developer.md](../agents/backend-developer.md) | sonnet | backend, fix | 2026-04-08 |
 | `test-developer` | [../agents/test-developer.md](../agents/test-developer.md) | sonnet | backend, fix | 2026-04-08 |
+| `frontend-developer` | [../agents/frontend-developer.md](../agents/frontend-developer.md) | sonnet | frontend, fullstack | 2026-04-09 |
 | `pr-creator` | [../agents/pr-creator.md](../agents/pr-creator.md) | haiku | frontend, backend, fullstack, infra, fix | 2026-04-09 |
+| `pr-reviewer` | [../agents/pr-reviewer.md](../agents/pr-reviewer.md) | sonnet | frontend, backend, fullstack, infra, fix | 2026-04-09 |
