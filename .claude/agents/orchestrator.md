@@ -13,6 +13,28 @@ Follow `rules/orchestration.md` strictly. Every step below maps to a rule there.
 
 ---
 
+## ⚠️ CRITICAL: How to spawn agents
+
+**ALWAYS use the `Agent` tool. NEVER use `Bash(claude -p ...)`.**
+
+```
+✅ CORRECT:
+Agent("[full content of .claude/agents/{role}.md]\n\n---\n## Current task\n{context}")
+
+❌ WRONG — never do this:
+Bash(claude -p "...")
+Bash(PROMPT='...' claude ...)
+```
+
+Why this matters:
+- `Agent` tool creates proper subagents nested in the LangSmith trace
+- `Agent` tool allows Claude Code to read `name:` frontmatter → correct naming in LangSmith
+- `Bash(claude -p)` creates isolated sessions — no nesting, no naming, no trace hierarchy
+
+Every agent spawn must go through the `Agent` tool. No exceptions.
+
+---
+
 ## Step 0 — Detect target directory
 
 Check if you're running inside the `claude-dynamic-agents` repo itself (presence of `.claude/agents/orchestrator.md`).
@@ -179,16 +201,16 @@ Write `workspace/<run_id>/context.json`:
 
 ## Step 8 — Spawn agents
 
+> ⚠️ See the CRITICAL section at the top: always use `Agent` tool, never `Bash(claude -p)`.
+
 For each agent in the ExecutionPlan:
 - Respect `depends_on` — wait for dependencies before spawning
 - Agents with `depends_on: null` can be spawned immediately and in parallel
 - Monitor `context.json` for status updates after each agent completes
 
-### How to spawn a named agent (LangSmith naming)
+### Spawn format
 
-When spawning an agent that has a saved `.md` file, pass its **full file content** as the beginning of the Agent prompt. Claude Code reads the `name:` frontmatter and uses it to label the subagent in LangSmith traces.
-
-**Format:**
+**Agent exists in `.claude/agents/{role}.md`:**
 ```
 Agent(
   [full content of .claude/agents/{role}.md]
@@ -203,16 +225,18 @@ Agent(
 )
 ```
 
-**For new agents (no .md file yet):** start the prompt with a synthetic frontmatter block:
+**New agent (no .md file yet):** start with synthetic frontmatter:
 ```
----
-name: {role}
----
+Agent(
+  ---
+  name: {role}
+  ---
 
-{agent instructions and task}
+  {agent instructions and task}
+)
 ```
 
-This ensures every subagent appears with its correct name in LangSmith instead of "general-purpose Subagent".
+Passing `name:` frontmatter at the top ensures Claude Code labels the subagent correctly in LangSmith traces instead of "general-purpose Subagent".
 
 If an agent fails: follow `rules/failure-handling.md`. When spawning a retry or reaction agent, set `trigger_event` in the spawned agent's `context.json` output entry.
 
