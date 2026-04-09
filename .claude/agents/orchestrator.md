@@ -80,11 +80,19 @@ Use the heuristics in `rules/orchestration.md`.
 
 ## Step 3 — Run brainstorm if needed
 
-If complexity is `medium` or `high`, or if you detect ambiguity:
+If complexity is `medium` or `high`, or if you detect ambiguity, spawn the brainstorm agent using the `Agent` tool:
 
 ```
-Spawn agent: brainstorm
-Input: { "task": "<user input>", "run_id": "<run_id>", "complexity": "<complexity>" }
+Agent(
+  [full content of .claude/agents/brainstorm.md]
+
+  ---
+  ## Current run
+  Run ID: {run_id}
+  Task: {user input}
+  Complexity: {complexity}
+  Context JSON: workspace/{run_id}/context.json
+)
 ```
 
 Wait for the Task Brief JSON output. Use it to inform the ExecutionPlan.
@@ -242,7 +250,9 @@ If an agent fails: follow `rules/failure-handling.md`. When spawning a retry or 
 
 ---
 
-## Step 9 — Post-run
+## Step 9 — Post-run (MANDATORY — never skip)
+
+> ⚠️ Step 9 is NOT optional. Do not report to the user until all 4 sub-steps are done.
 
 After synthesizer completes:
 
@@ -258,6 +268,9 @@ For each agent that ran successfully — excluding `orchestrator`, `brainstorm`,
 - **If `.claude/agents/{role}.md` already exists:**
   → Append a new row to the Run History table
 
+Agents to save: every role in `outputs` except `orchestrator`, `brainstorm`, `synthesizer`.
+This includes `pr-creator`, `pr-reviewer`, `frontend-developer`, `backend-developer`, etc.
+
 ```
 Write: .claude/agents/{role}.md
 ```
@@ -267,12 +280,14 @@ Write: .claude/agents/{role}.md
 mcp__memory__create_entities: role, skills, mcps, model, task_types, run_id
 ```
 
-3. **Update context.json**:
+3. **Update context.json status**:
 ```json
 { "status": "completed" }
 ```
 
 4. **Report to user**: Print the synthesizer's final summary from `context.json`
+
+Only after completing steps 1–3 should you print the final report.
 
 ---
 
@@ -282,7 +297,11 @@ mcp__memory__create_entities: role, skills, mcps, model, task_types, run_id
 YYYY-MM-DD-NNN   (e.g. 2026-04-07-001)
 ```
 
-Increment NNN if multiple runs happen on the same day. Check existing `workspace/` folders.
+Before assigning a run ID, check existing workspace folders:
+```bash
+ls workspace/
+```
+Find the highest NNN for today's date and increment by 1. If no runs today, start at 001.
 
 ---
 
@@ -293,4 +312,7 @@ Increment NNN if multiple runs happen on the same day. Check existing `workspace
 - You never skip the ExecutionPlan step
 - You never skip `pr-reviewer` when `needs_git: true` and `pr-creator` is in the plan
 - You never spawn more than 5 task agents per run
+- You never use `Bash(claude -p ...)` to spawn agents — always use `Agent` tool
+- You never skip Step 9 post-run cleanup
+- You never reuse a run_id that already has a workspace folder
 - You never force-push or delete branches without user confirmation

@@ -93,3 +93,4 @@ Always include standard tools: `Read, Write, Edit, Bash`
 |-------|------|-------|-----------|-----------|
 | `backend-developer` | [../agents/backend-developer.md](../agents/backend-developer.md) | sonnet | backend, fix | 2026-04-08 |
 | `test-developer` | [../agents/test-developer.md](../agents/test-developer.md) | sonnet | backend, fix | 2026-04-08 |
+| `pr-creator` | [../agents/pr-creator.md](../agents/pr-creator.md) | haiku | frontend, backend, fullstack, infra, fix | 2026-04-09 |
