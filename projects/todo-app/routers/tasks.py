@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 
 from schemas import TaskCreate, TaskResponse
 
@@ -31,4 +32,13 @@ async def mark_task_done(id: int) -> TaskResponse:
             updated = {**task, "done": True}
             tasks[tasks.index(task)] = updated
             return TaskResponse(**updated)
+    raise HTTPException(status_code=404, detail="Task not found")
+
+
+@router.delete("/{id}", status_code=204)
+async def delete_task(id: int) -> Response:
+    for i, task in enumerate(tasks):
+        if task["id"] == id:
+            tasks.pop(i)
+            return Response(status_code=204)
     raise HTTPException(status_code=404, detail="Task not found")

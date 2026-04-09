@@ -293,3 +293,75 @@ async def test_patch_task_does_not_affect_other_tasks(client: httpx.AsyncClient)
     assert done_tasks[0]["id"] == task_one_id
     assert len(pending_tasks) == 1
     assert pending_tasks[0]["title"] == "Task Two"
+
+
+# ---------------------------------------------------------------------------
+# DELETE /tasks/{id}
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_delete_task_happy_path(client: httpx.AsyncClient) -> None:
+    """Create a task then DELETE it → 204 with no response body."""
+    create_response = await client.post("/tasks", json={"title": "Delete me"})
+    task_id = create_response.json()["id"]
+
+    delete_response = await client.delete(f"/tasks/{task_id}")
+
+    assert delete_response.status_code == 204
+    assert delete_response.content == b""
+
+
+@pytest.mark.asyncio
+async def test_delete_task_not_found(client: httpx.AsyncClient) -> None:
+    """DELETE with a non-existent id returns 404."""
+    response = await client.delete("/tasks/9999")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_task_removed_from_list(client: httpx.AsyncClient) -> None:
+    """Create a task, DELETE it, then GET /tasks → task no longer in list."""
+    create_response = await client.post("/tasks", json={"title": "Temporary task"})
+    task_id = create_response.json()["id"]
+
+    await client.delete(f"/tasks/{task_id}")
+
+    list_response = await client.get("/tasks")
+    task_ids = [t["id"] for t in list_response.json()]
+
+    assert task_id not in task_ids
+    assert list_response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_delete_task_other_tasks_unaffected(client: httpx.AsyncClient) -> None:
+    """Create 2 tasks, DELETE one, GET /tasks → only the other remains."""
+    create_one = await client.post("/tasks", json={"title": "Keep me"})
+    create_two = await client.post("/tasks", json={"title": "Remove me"})
+    keep_id = create_one.json()["id"]
+    remove_id = create_two.json()["id"]
+
+    await client.delete(f"/tasks/{remove_id}")
+
+    list_response = await client.get("/tasks")
+    remaining = list_response.json()
+
+    assert len(remaining) == 1
+    assert remaining[0]["id"] == keep_id
+    assert remaining[0]["title"] == "Keep me"
+
+
+@pytest.mark.asyncio
+async def test_delete_task_double_delete(client: httpx.AsyncClient) -> None:
+    """DELETE the same id twice → first returns 204, second returns 404."""
+    create_response = await client.post("/tasks", json={"title": "One-time task"})
+    task_id = create_response.json()["id"]
+
+    first_delete = await client.delete(f"/tasks/{task_id}")
+    second_delete = await client.delete(f"/tasks/{task_id}")
+
+    assert first_delete.status_code == 204
+    assert second_delete.status_code == 404
+
