@@ -22,3 +22,13 @@ async def create_task(payload: TaskCreate) -> TaskResponse:
 @router.get("", response_model=list[TaskResponse])
 async def list_tasks() -> list[TaskResponse]:
     return [TaskResponse(**task) for task in tasks]
+
+
+@router.patch("/{id}", response_model=TaskResponse)
+async def mark_task_done(id: int) -> TaskResponse:
+    for task in tasks:
+        if task["id"] == id:
+            updated = {**task, "done": True}
+            tasks[tasks.index(task)] = updated
+            return TaskResponse(**updated)
+    raise HTTPException(status_code=404, detail="Task not found")
