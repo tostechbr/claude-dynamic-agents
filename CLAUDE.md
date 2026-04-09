@@ -14,28 +14,29 @@ This is distinct from static orchestration (like everything-claude-code) where a
 /tos [user input]
     ↓
 orchestrator.md
-  1. classifica a tarefa (tipo, complexidade)
-  2. checa registry: agente adequado já existe?
-  3. se não → monta config do catalog → salva no registry
-  4. gera ExecutionPlan JSON
+  1. classify task (type, complexity)
+  2. check .claude/agents/: does a matching agent already exist?
+  3. if not → build config from catalog → save to .claude/agents/ after run
+  4. generate ExecutionPlan JSON
     ↓
-N agentes em paralelo/sequential (baseado em depends_on)
+N agents in parallel/sequential (based on depends_on)
     ↓
-synthesizer.md  ← agrega outputs via context.json
+synthesizer.md  ← aggregates outputs via context.json
 ```
 
 ## Architecture Decisions
 
 ### Catalog vs Registry
-- `catalog/` — paleta estática de ingredientes (skills, MCPs, models). Curado manualmente.
-- `registry/` — agentes já montados e salvos de runs anteriores. Cresce com o uso.
+- `catalog/` — static palette of ingredients (skills, MCPs, models). Manually curated, never changes.
+- `registry/index.md` — summary index + agent .md template. The actual saved agents live in `.claude/agents/`.
 
-The orchestrator checks the registry first before building from the catalog.
+Dynamic agents are saved as `.md` files in `.claude/agents/` alongside permanent agents. Claude Code reads their `name:` frontmatter and uses it to label subagents in LangSmith traces.
+
+The orchestrator checks `.claude/agents/` first before building from the catalog.
 
 ### Why separate commands/ and agents/?
 - `commands/` are entry points (slash commands the user types)
-- `agents/` are permanent agents (orchestrator, synthesizer)
-- Task agents are ephemeral — spawned from catalog/registry, not stored as files
+- `agents/` are agent definitions: permanent ones (orchestrator, brainstorm, synthesizer) + dynamic ones saved after successful runs
 
 ### Context propagation
 Agents communicate via `workspace/{run-id}/context.json` — single source of truth for plan, outputs, status, and causal chain (`trigger_event`).
@@ -93,3 +94,14 @@ Build in this order (each depends on the previous):
 - Skills = how to think, MCPs = what to do
 - Fail loud, not silent — every failure is visible and escalated if unrecoverable
 - Examples in `examples/` are actual generated outputs, not templates
+
+## Agent Behavior Principles
+
+Rules that apply to every agent in the system — orchestrator, subagents, and dynamic agents alike.
+
+- **Plan first** — for non-trivial tasks, reason about the approach before executing. Don't start writing code before understanding the full scope.
+- **Verification before done** — before marking a task complete, ask: "is there a simpler or more elegant solution?" Review your own output critically.
+- **Never mock** — use real implementations. Never return fake/hardcoded data unless explicitly asked. Tests must run against the real app.
+- **Touch only what's relevant** — only modify files within the task scope. Avoid introducing changes to unrelated parts of the codebase.
+- **Self-correct on failure** — when something breaks, diagnose first. Don't retry blindly or ask for hand-holding on fixable errors.
+- **Diff before presenting** — check what actually changed before reporting completion. The summary must reflect reality, not intention.

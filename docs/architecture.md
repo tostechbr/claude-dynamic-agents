@@ -3,65 +3,76 @@
 ## Overview
 
 ```
-task entra (/tos "cria um botão de submit")
+task arrives (/tos "build a submit button")
         ↓
 [orchestrator]
-  1. classifica a tarefa (tipo, complexidade)
-  2. checa registry: agente adequado já existe?
-  3. se não → monta config do catalog → salva no registry
-  4. gera ExecutionPlan JSON
+  1. classify task (type, complexity)
+  2. check agents/: does a matching agent already exist?
+  3. if not → build config from catalog → save to .claude/agents/ after run
+  4. generate ExecutionPlan JSON
         ↓
-[brainstorm]  ← roda para medium/high complexity
-  analisa requisitos explícitos, implícitos, ambiguidades
+[brainstorm]  ← runs for medium/high complexity
+  analyzes explicit/implicit requirements, ambiguities
         ↓
-[agentes em paralelo ou sequencial]
+[agents in parallel or sequential]
   backend-developer → pr-creator → pr-reviewer
         ↓
 [synthesizer]
-  agrega outputs via context.json → resultado final
+  aggregates outputs via context.json → final report
 ```
 
 ---
 
-## Duas camadas distintas
+## Two distinct layers
 
-### Catalog (estático, curado manualmente)
-Paleta de ingredientes disponíveis. Não muda com o uso.
+### Catalog (static, manually curated)
+The palette of available ingredients. Does not change with usage.
 
 ```
 .claude/catalog/
-├── skills.md    ← conhecimento de domínio (como pensar)
-├── mcps.md      ← ferramentas externas (o que pode fazer)
-└── models.md    ← regras de seleção de modelo
+├── skills.md    ← domain knowledge (how to think about problems)
+├── mcps.md      ← external tools (what agents can do)
+└── models.md    ← model selection rules
 ```
 
-### Registry (dinâmico, cresce com o uso)
-Agentes já montados e salvos de runs anteriores. O orquestrador consulta aqui antes de criar do zero.
+### Registry (dynamic, grows with use)
+Agent configs saved from previous runs. The orchestrator checks here before building from scratch.
+
+Dynamic agents are saved as `.md` files directly inside `.claude/agents/` — the same folder where permanent agents live. Claude Code reads the `name:` frontmatter from these files and uses it to label subagents correctly in LangSmith traces.
 
 ```
-.claude/registry/
-└── index.md    ← lista de agentes salvos + quando usar
+.claude/agents/
+├── orchestrator.md       ← permanent
+├── brainstorm.md         ← permanent
+├── synthesizer.md        ← permanent
+├── backend-developer.md  ← saved after run 2026-04-08-001
+├── test-developer.md     ← saved after run 2026-04-08-002
+└── ...                   ← new roles added automatically after each successful /tos run
 ```
+
+`registry/index.md` maintains the summary index and agent `.md` template only.
+
+Each agent `.md` file contains frontmatter (name, model, tools), a standard contract section, a saved configuration table, and a Run History table the orchestrator uses to understand past usage patterns.
 
 ---
 
-## Classificação de tarefas
+## Task classification
 
-Antes de spawnar, o orquestrador classifica:
+Before spawning, the orchestrator classifies:
 
-| Campo | Exemplo |
+| Field | Example |
 |-------|---------|
-| tipo | frontend / backend / fullstack / infra / fix / other |
-| complexidade | low / medium / high |
-| precisa de git | sim / não |
-| agentes sugeridos | backend-developer, pr-creator, pr-reviewer |
-| execução | sequential / parallel / mixed |
+| type | frontend / backend / fullstack / infra / fix / other |
+| complexity | low / medium / high |
+| needs_git | true / false |
+| suggested agents | backend-developer, pr-creator, pr-reviewer |
+| execution | sequential / parallel / mixed |
 
-Isso evita over-engineering: um botão não precisa de 5 agentes.
+This prevents over-engineering: adding a button doesn't need 5 agents.
 
 ---
 
-## Execução paralela vs sequencial
+## Parallel vs sequential execution
 
 ```json
 {
@@ -75,30 +86,30 @@ Isso evita over-engineering: um botão não precisa de 5 agentes.
 }
 ```
 
-- `depends_on: null` → pode rodar imediatamente
-- `depends_on: ["A", "B"]` → espera ambos terminarem (barrier)
-- Agentes sem dependência entre si rodam em paralelo
+- `depends_on: null` → can run immediately
+- `depends_on: ["A", "B"]` → waits for both to complete (barrier)
+- Agents with no dependency between them run in parallel
 
 ---
 
 ## Monorepo mode
 
-Quando `/tos` roda dentro deste repo, o código gerado vai para `projects/{nome}/` em vez do diretório atual:
+When `/tos` runs inside this repo, generated code goes to `projects/{name}/` instead of the current directory:
 
-| Condição | Modo | Código vai para |
-|----------|------|-----------------|
-| `.claude/agents/orchestrator.md` existe no cwd | Monorepo | `projects/{project-name}/` |
-| Caso contrário | Externo | Diretório atual |
+| Condition | Mode | Code goes to |
+|-----------|------|--------------|
+| `.claude/agents/orchestrator.md` exists in cwd | Monorepo | `projects/{project-name}/` |
+| Otherwise | External | Current working directory |
 
 ---
 
-## Estrutura de pastas completa
+## Full folder structure
 
 ```
 claude-dynamic-agents/
 ├── CLAUDE.md
 ├── README.md
-├── projects/                     ← projetos gerados (monorepo mode)
+├── projects/                     ← generated projects (monorepo mode)
 │   └── {project-name}/
 ├── .claude/
 │   ├── settings.json
@@ -107,12 +118,13 @@ claude-dynamic-agents/
 │   │   ├── mcps.md
 │   │   └── models.md
 │   ├── registry/
-│   │   └── index.md              ← inicialmente vazio, cresce com o uso
-│   ├── agents/
-│   │   ├── brainstorm.md         ← pré-análise (medium/high complexity)
-│   │   ├── orchestrator.md       ← THE BRAIN
-│   │   └── synthesizer.md
-│   ├── skills/                   ← 15 skills instaladas
+│   │   └── index.md              ← summary index + agent .md template
+│   ├── agents/                   ← ALL agents live here (permanent + dynamic)
+│   │   ├── orchestrator.md       ← THE BRAIN (permanent)
+│   │   ├── brainstorm.md         ← pre-analysis for medium/high complexity (permanent)
+│   │   ├── synthesizer.md        ← permanent
+│   │   └── ...                   ← dynamic agents saved here after each successful run
+│   ├── skills/                   ← 15 skills installed
 │   │   ├── execution-plan/
 │   │   ├── fastapi-patterns/
 │   │   ├── react-patterns/
@@ -133,17 +145,17 @@ claude-dynamic-agents/
 │   │   ├── agent-contracts.md
 │   │   └── failure-handling.md
 │   └── commands/
-│       ├── tos.md                ← /tos [task] — entry point principal
+│       ├── tos.md                ← /tos [task] — main entry point
 │       └── plan.md               ← /plan (dry-run)
 ├── workspace/
-│   └── {run-id}/                 ← outputs efêmeros de cada run
-│       ├── context.json          ← estado compartilhado entre agentes
-│       └── activity.jsonl        ← log de eventos append-only
+│   └── {run-id}/                 ← ephemeral run outputs
+│       ├── context.json          ← shared state between agents
+│       └── activity.jsonl        ← append-only event log (observability)
 ├── examples/
 │   ├── todo-app/
 │   └── blog-platform/
 └── docs/
-    ├── architecture.md           ← este arquivo
+    ├── architecture.md           ← this file
     ├── catalog.md
     ├── agent-lifecycle.md
     ├── context-propagation.md

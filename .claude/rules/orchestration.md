@@ -37,16 +37,19 @@ Ambiguity signals: vague pronouns ("the app", "it"), missing stack info, conflic
 
 ## Step 3 — Check the registry
 
-Before building agents from scratch, check `.claude/registry/index.md`:
+Before building agents from scratch, check in this order:
 
-1. Is there a saved agent config that matches the needed role?
-2. Does it match the current task's required skills and MCPs?
-3. Was it used successfully before (status: `active`)?
+1. **`.claude/agents/{role}.md` exists?**
+   → Load it directly — model, tools, skills already defined
+   → Only adapt the `context` field for the current task
 
-If yes → reuse and adapt the config.
-If no → build from `catalog/skills.md`, `catalog/mcps.md`, `catalog/models.md`.
+2. **Else: check memory MCP** for saved config metadata
+   → Rebuild agent from saved role + skills + mcps + model
 
-After a successful run, save new agent configs to the registry.
+3. **Else: build fresh from catalog**
+   → `catalog/skills.md`, `catalog/mcps.md`, `catalog/models.md`
+
+After a successful run, save new agents to `.claude/agents/` (Step 7).
 
 ---
 
@@ -54,18 +57,34 @@ After a successful run, save new agent configs to the registry.
 
 MUST produce a valid JSON ExecutionPlan (see `skills/execution-plan/SKILL.md`) before spawning any agent.
 
-**Rules for building the plan:**
+### Agent limits
+
+| Category | Agents | Limit |
+|----------|--------|-------|
+| Task agents | backend-developer, frontend-developer, test-developer, db-architect, pr-creator, etc. | max 5 per run |
+| Infrastructure | `synthesizer` (always) + `pr-reviewer` (when needs_git: true) | does NOT count toward limit |
+| **Total maximum** | | **7 agents** |
+
+If a task naturally requires more than 5 task agents → decompose into sequential /tos runs.
+
+### Plan rules
 
 - Every agent MUST have: `role`, `model`, `skills`, `mcps`, `depends_on`, `context`
 - `context` must be specific — what does this agent need to know to do its job?
 - Agents that write code MUST have `worktree` set to a branch name
 - `synthesizer` is always the last agent, with `depends_on` pointing to all others
-- Never spawn more than 5 agents per run — decompose large tasks into sequential runs
+- Always use `task_brief` as the key in context.json — never `classification`
 
-**Parallelism rules:**
+### Parallelism rules
 - Agents with no shared state → `depends_on: null` → run in parallel
 - Agent B needs Agent A's output → `depends_on: "agent-a"`
 - Agent C needs both A and B → `depends_on: ["agent-a", "agent-b"]`
+
+### MANDATORY PR review rule
+
+**If `needs_git: true` AND `pr-creator` is in the plan → MUST add `pr-reviewer` after `pr-creator`. No exceptions. `pr-reviewer` does not count toward the 5-agent task limit.**
+
+The pr-reviewer posts review comments (`event: "COMMENT"`) on the GitHub PR — it never approves or requests changes. The human decides what to do with the comments.
 
 ---
 
@@ -91,6 +110,9 @@ For `low` and `medium` with no ambiguities: execute directly.
 
 In monorepo mode, infer project name from task in kebab-case (e.g. "build a todo app" → `projects/todo-app`). Set `target_dir` as a top-level field in `context.json` — agents read it from there, no need to repeat it in each agent's `context` string.
 
+**Spawning named agents (LangSmith naming):**
+Pass the full `.md` file content at the start of the Agent prompt so Claude Code can read the `name:` frontmatter and label the subagent correctly in traces. See `agents/orchestrator.md` Step 8 for the exact format.
+
 - Create `workspace/{run_id}/` folder
 - Initialize `workspace/{run_id}/context.json` with the plan, `target_dir`, and `status: "running"`
 - Spawn agents per the ExecutionPlan
@@ -102,6 +124,14 @@ In monorepo mode, infer project name from task in kebab-case (e.g. "build a todo
 ## Step 7 — Post-run cleanup
 
 After synthesizer completes:
-1. Save successful agent configs to `registry/index.md`
-2. Update `context.json` with `status: "completed | partial | failed"`
-3. Report run result to the user
+
+1. **Save dynamic agents to `.claude/agents/`**
+   - New role → create `.claude/agents/{role}.md` from template in `registry/index.md`
+   - Existing role → append row to its Run History table
+   - Skip permanent agents: `orchestrator`, `brainstorm`, `synthesizer`
+
+2. **Update `registry/index.md`** — keep the summary index current
+
+3. **Update `context.json`** with `status: "completed | partial | failed"`
+
+4. **Report run result** to the user

@@ -53,15 +53,20 @@ Before running, the orchestrator reads a curated catalog:
 
 ### 2. Registry — saved agents
 
-Agents built from the catalog get saved for reuse:
+Agents built from the catalog get saved for reuse directly into `.claude/agents/`:
 
 ```
-.claude/registry/
-├── index.md
-└── react-developer.json   ← saved config from a previous run
+.claude/agents/
+├── orchestrator.md       ← permanent
+├── brainstorm.md         ← permanent
+├── synthesizer.md        ← permanent
+├── backend-developer.md  ← saved after first successful run
+└── test-developer.md     ← saved after second run
 ```
 
-Next time a similar task arrives, the orchestrator adapts the existing config instead of building from scratch.
+`registry/index.md` maintains the summary index and agent template. The actual `.md` files live in `.claude/agents/` so Claude Code can read their `name:` frontmatter and label subagents correctly in LangSmith traces.
+
+Next time a similar task arrives, the orchestrator loads the saved agent directly instead of building from scratch.
 
 ### 3. ExecutionPlan
 
@@ -125,10 +130,12 @@ claude-dynamic-agents/
 │   │   ├── mcps.md
 │   │   └── models.md
 │   ├── registry/             ← saved agent configs (grows with use)
-│   │   └── index.md
-│   ├── agents/
-│   │   ├── orchestrator.md   ← THE BRAIN
-│   │   └── synthesizer.md
+│   │   └── index.md              ← summary index + agent .md template
+│   ├── agents/               ← all agents live here (permanent + dynamic)
+│   │   ├── orchestrator.md   ← THE BRAIN (permanent)
+│   │   ├── brainstorm.md     ← pre-analysis (permanent)
+│   │   ├── synthesizer.md    ← permanent
+│   │   └── ...               ← dynamic agents saved here by /tos
 │   ├── skills/               ← skill implementations (15 installed)
 │   │   ├── execution-plan/
 │   │   ├── fastapi-patterns/

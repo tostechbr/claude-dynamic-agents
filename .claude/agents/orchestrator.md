@@ -73,18 +73,24 @@ If complexity is `low` with no ambiguity: build the Task Brief yourself inline.
 
 ## Step 4 — Check the registry
 
-Search `registry/index.md` and memory MCP for saved agent configs matching the needed roles.
+Check for saved agents in this order:
 
+**1. `.claude/agents/{role}.md` exists?**
+```
+Read: .claude/agents/{role}.md
+```
+→ Load it directly — model, tools, and skills are in the frontmatter
+→ Adapt the `context` field for the current task
+→ Read Run History to understand past usage patterns
+
+**2. Else: check memory MCP**
 ```
 mcp__memory__search_nodes: query = "<role> agent"
 ```
+→ Rebuild config from saved metadata
 
-Reuse configs that:
-- Match the needed role
-- Have `status: active`
-- Were used successfully on similar task types
-
-Adapt reused configs to the current task's skills and context.
+**3. Else: build fresh from catalog**
+→ Use `catalog/skills.md`, `catalog/mcps.md`, `catalog/models.md`
 
 ---
 
@@ -92,7 +98,23 @@ Adapt reused configs to the current task's skills and context.
 
 Produce a valid JSON ExecutionPlan following `skills/execution-plan/SKILL.md`.
 
-Rules:
+### Agent limits
+
+Agents are split into two categories:
+
+**Task agents** (max 5 per run):
+- Any agent that writes code, reads files, or performs the actual work
+- Examples: `backend-developer`, `frontend-developer`, `test-developer`, `db-architect`, `pr-creator`
+- If a task requires more than 5 task agents → decompose into sequential runs
+
+**Infrastructure agents** (do NOT count toward the limit):
+- `synthesizer` — always last, always present
+- `pr-reviewer` — always present when `needs_git: true` AND `pr-creator` is in the plan
+
+Maximum total agents per run: **7** (5 task + pr-reviewer + synthesizer)
+
+### Plan rules
+
 - Every agent needs: `role`, `model`, `skills`, `mcps`, `depends_on`, `context`, `worktree`
 - **Model: follow `catalog/models.md` Assignment Table exactly — do NOT default everything to sonnet:**
   - `orchestrator` / `brainstorm` → `claude-opus-4-6`
@@ -101,7 +123,25 @@ Rules:
 - Use `catalog/skills.md` for skill selection
 - Use `catalog/mcps.md` for MCP selection
 - `context` must tell the agent exactly what to do and what to know from prior agents
-- `synthesizer` always last
+- `synthesizer` always last, `depends_on` pointing to all others
+
+### MANDATORY: PR review rule
+
+**If `needs_git: true` AND `pr-creator` is in the plan → you MUST add `pr-reviewer` immediately after `pr-creator`. No exceptions.**
+
+```json
+{
+  "role": "pr-reviewer",
+  "model": "claude-sonnet-4-6",
+  "skills": ["security-patterns", "verification-loop"],
+  "mcps": ["github", "filesystem"],
+  "depends_on": "pr-creator",
+  "worktree": null,
+  "context": "Review the PR created by pr-creator. Read the PR URL and pull_number from context.json outputs.pr-creator.summary. Use mcp__github__get_pull_request_files to see changed files, read them locally, then post review comments using mcp__github__create_pull_request_review with event: COMMENT only — do not approve or request changes. Write your findings to context.json."
+}
+```
+
+The pr-reviewer only posts comments (`event: "COMMENT"`). It never approves or blocks the PR — that is the human's decision.
 
 ---
 
@@ -133,6 +173,8 @@ Write `workspace/<run_id>/context.json`:
 }
 ```
 
+**Important:** always use the key `task_brief` — never `classification`.
+
 ---
 
 ## Step 8 — Spawn agents
@@ -140,8 +182,37 @@ Write `workspace/<run_id>/context.json`:
 For each agent in the ExecutionPlan:
 - Respect `depends_on` — wait for dependencies before spawning
 - Agents with `depends_on: null` can be spawned immediately and in parallel
-- Pass `context.json` path + agent's `context` field as input
 - Monitor `context.json` for status updates after each agent completes
+
+### How to spawn a named agent (LangSmith naming)
+
+When spawning an agent that has a saved `.md` file, pass its **full file content** as the beginning of the Agent prompt. Claude Code reads the `name:` frontmatter and uses it to label the subagent in LangSmith traces.
+
+**Format:**
+```
+Agent(
+  [full content of .claude/agents/{role}.md]
+
+  ---
+  ## Current run
+  Run ID: {run_id}
+  Context JSON: workspace/{run_id}/context.json
+
+  ## Your task
+  {specific context from ExecutionPlan for this agent}
+)
+```
+
+**For new agents (no .md file yet):** start the prompt with a synthetic frontmatter block:
+```
+---
+name: {role}
+---
+
+{agent instructions and task}
+```
+
+This ensures every subagent appears with its correct name in LangSmith instead of "general-purpose Subagent".
 
 If an agent fails: follow `rules/failure-handling.md`. When spawning a retry or reaction agent, set `trigger_event` in the spawned agent's `context.json` output entry.
 
@@ -151,17 +222,33 @@ If an agent fails: follow `rules/failure-handling.md`. When spawning a retry or 
 
 After synthesizer completes:
 
-1. **Update registry**: Save successful new agent configs via memory MCP
+1. **Save dynamic agents as .md files**
+
+For each agent that ran successfully — excluding `orchestrator`, `brainstorm`, `synthesizer` (those are permanent):
+
+- **If `.claude/agents/{role}.md` does NOT exist:**
+  → Create it using the template in `registry/index.md`
+  → Frontmatter: `name`, `model`, `tools` (from MCP mapping in `registry/index.md`)
+  → Body: standard contract + saved configuration table + first run history row
+
+- **If `.claude/agents/{role}.md` already exists:**
+  → Append a new row to the Run History table
+
 ```
-mcp__memory__create_entities: new agent config with role, skills, mcps, model
+Write: .claude/agents/{role}.md
 ```
 
-2. **Update context.json**:
+2. **Update memory MCP**
+```
+mcp__memory__create_entities: role, skills, mcps, model, task_types, run_id
+```
+
+3. **Update context.json**:
 ```json
 { "status": "completed" }
 ```
 
-3. **Report to user**: Print the synthesizer's final summary from `context.json`
+4. **Report to user**: Print the synthesizer's final summary from `context.json`
 
 ---
 
@@ -180,5 +267,6 @@ Increment NNN if multiple runs happen on the same day. Check existing `workspace
 - You never write implementation code
 - You never edit source files directly
 - You never skip the ExecutionPlan step
-- You never spawn more than 5 agents per run
+- You never skip `pr-reviewer` when `needs_git: true` and `pr-creator` is in the plan
+- You never spawn more than 5 task agents per run
 - You never force-push or delete branches without user confirmation

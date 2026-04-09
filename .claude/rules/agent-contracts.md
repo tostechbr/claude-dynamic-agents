@@ -130,6 +130,37 @@ The `summary` field is the primary way agents communicate with each other.
 
 ---
 
+## pr-creator contract
+
+When a PR is created, the `summary` field MUST include the `pull_number` and full PR URL so the `pr-reviewer` can access them:
+
+```
+"summary": "PR #7 created — pull_number: 7, url: https://github.com/owner/repo/pull/7, branch: feat/todo-app-backend"
+```
+
+The pr-reviewer reads this summary to call `mcp__github__create_pull_request_review`.
+
+---
+
+## pr-reviewer contract
+
+The pr-reviewer MUST:
+- Use `event: "COMMENT"` only — never `"APPROVE"` or `"REQUEST_CHANGES"`
+- Post comments on the actual PR via `mcp__github__create_pull_request_review`
+- Write its findings to context.json summary (list of issues found, or "No issues found")
+- Never block the run — the PR review is informational only
+
+```json
+{
+  "status": "done",
+  "summary": "Review posted on PR #7. Found 2 comments: missing input validation on POST /tasks, no error handling for 500 responses.",
+  "files_changed": [],
+  "worktree": null
+}
+```
+
+---
+
 ## Synthesizer contract
 
 The synthesizer reads ALL `outputs` from `context.json` and produces:
