@@ -1,7 +1,0 @@
-{
-  "env": {
-    "TRACE_TO_LANGSMITH": "true",
-    "CC_LANGSMITH_API_KEY": "<your-langsmith-api-key>",
-    "CC_LANGSMITH_PROJECT": "claude-dynamic-agents"
-  }
-}

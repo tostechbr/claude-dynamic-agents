@@ -94,11 +94,13 @@ Produce a valid JSON ExecutionPlan following `skills/execution-plan/SKILL.md`.
 
 Rules:
 - Every agent needs: `role`, `model`, `skills`, `mcps`, `depends_on`, `context`, `worktree`
-- Use `catalog/models.md` for model selection
+- **Model: follow `catalog/models.md` Assignment Table exactly — do NOT default everything to sonnet:**
+  - `orchestrator` / `brainstorm` → `claude-opus-4-6`
+  - coding agents (`backend-developer`, `frontend-developer`, `test-developer`, `pr-reviewer`) → `claude-sonnet-4-6`
+  - mechanical agents (`pr-creator`, `synthesizer`) → `claude-haiku-4-5-20251001`
 - Use `catalog/skills.md` for skill selection
 - Use `catalog/mcps.md` for MCP selection
 - `context` must tell the agent exactly what to do and what to know from prior agents
-- Maximum 5 agents per run
 - `synthesizer` always last
 
 ---

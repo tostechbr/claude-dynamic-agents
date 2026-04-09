@@ -12,49 +12,58 @@ Model selection directly impacts cost, speed, and quality. The orchestrator assi
 
 ---
 
-## Selection Rules
+## Assignment Rules — follow this table exactly
 
-### Use Haiku when:
-- Task is simple and well-defined (no ambiguity)
-- Agent produces boilerplate or templated output
-- Agent role is mechanical, not creative (e.g. `pr-creator`)
-- High volume, low stakes (formatting, simple transforms)
+**Do not default everything to sonnet.** Each role has a specific model for a reason.
 
-### Use Sonnet when:
-- Writing or reviewing multi-file code changes
-- Agent needs to reason about correctness and quality
-- Most coding agents: `backend-developer`, `frontend-developer`, `db-architect`, `pr-reviewer`
-- Default choice when unsure
-
-### Use Opus when:
-- The **orchestrator** itself — needs deep reasoning to decompose complex tasks
-- The **brainstorm** agent — needs to infer implicit requirements and ambiguities
-- Architectural decisions with long-term consequences
-- Tasks where getting it wrong means expensive rework
+| Agent Role | Model | Full Model ID | Reason |
+|------------|-------|---------------|--------|
+| `orchestrator` | **opus** | `claude-opus-4-6` | Complex decomposition, needs deep reasoning to build the right plan |
+| `brainstorm` | **opus** | `claude-opus-4-6` | Inferring implicit requirements, flagging ambiguities |
+| `backend-developer` | **sonnet** | `claude-sonnet-4-6` | Multi-file code, correctness matters |
+| `frontend-developer` | **sonnet** | `claude-sonnet-4-6` | Component architecture, TypeScript, styling |
+| `test-developer` | **sonnet** | `claude-sonnet-4-6` | Writing correct async tests requires reasoning |
+| `db-architect` | **sonnet** | `claude-sonnet-4-6` | Schema design requires quality reasoning |
+| `devops-agent` | **sonnet** | `claude-sonnet-4-6` | Docker, CI/CD — precision required |
+| `pr-reviewer` | **sonnet** | `claude-sonnet-4-6` | Needs to reason about code quality and security |
+| `pr-creator` | **haiku** | `claude-haiku-4-5-20251001` | Mechanical: git commit + gh pr create, no reasoning needed |
+| `synthesizer` | **haiku** | `claude-haiku-4-5-20251001` | Simple aggregation of outputs, no creativity needed |
 
 ---
 
-## Quick Assignment Guide
+## When to deviate
 
-| Agent Role | Model | Reason |
-|------------|-------|--------|
-| `orchestrator` | `opus` | Complex decomposition, catalog reasoning |
-| `brainstorm` | `opus` | Inferring implicit requirements, flagging ambiguities |
-| `db-architect` | `sonnet` | Schema design requires quality reasoning |
-| `backend-developer` | `sonnet` | Multi-file code, correctness matters |
-| `frontend-developer` | `sonnet` | Component architecture, TypeScript |
-| `devops-agent` | `sonnet` | Docker, CI/CD, deployment config — precision required |
-| `pr-creator` | `haiku` | Mechanical: git commit + gh pr create |
-| `pr-reviewer` | `sonnet` | Needs to reason about code quality and security |
-| `synthesizer` | `sonnet` | Integrates all outputs, writes final summary |
+Override the table only in these cases:
+
+| Situation | Override |
+|-----------|----------|
+| Task `complexity: high` for a coding agent | upgrade to `opus` |
+| Agent is doing pure file operations or templating | downgrade to `haiku` |
+| Budget constraint explicitly mentioned by user | downgrade all by one tier |
 
 ---
 
-## Cost Awareness
+## Why model diversity matters
 
-For a typical full-stack feature run with 5 agents:
-- `opus` (orchestrator + brainstorm) → ~2 calls
-- `sonnet` (3–4 coding agents) → ~4 calls
-- `haiku` (pr-creator) → ~1 call
+When the LangSmith trace shows every agent using `claude-sonnet-4-6`, it means the orchestrator is not reasoning about model selection — it's defaulting. The whole point of dynamic orchestration is that **different agents get different models based on what they actually need**.
+
+A correct run should show:
+```
+orchestrator      → claude-opus-4-6          (planning)
+backend-developer → claude-sonnet-4-6        (coding)
+test-developer    → claude-sonnet-4-6        (testing)
+pr-creator        → claude-haiku-4-5-20251001 (mechanical)
+pr-reviewer       → claude-sonnet-4-6        (analysis)
+synthesizer       → claude-haiku-4-5-20251001 (aggregation)
+```
+
+---
+
+## Cost reference
+
+For a typical backend feature run (6 agents):
+- `opus` × 1 (orchestrator) → most expensive, but called once
+- `sonnet` × 3–4 (coding agents) → medium cost, most of the work
+- `haiku` × 2 (pr-creator + synthesizer) → cheap, fast
 
 Avoid using `opus` for agents that don't need deep reasoning — the cost difference is significant at scale.
