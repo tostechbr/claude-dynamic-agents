@@ -172,19 +172,40 @@ Team: {list of teammates}
 
 ## Step 6 — Save new agent types
 
-For each role that was built dynamically (not loaded from registry):
+> ⚠️ MANDATORY — do NOT skip. Do NOT just say you saved. Actually execute the Write tool.
 
-1. Write `.claude/agents/{role}.md` using the inline definition + add Run History table:
+For each role that was built dynamically (not loaded from registry), you MUST use the `Write` tool to create the file on disk.
 
-```markdown
+**Execute this for each new role:**
+
+```
+Write: .claude/agents/{role}.md
+Content:
+---
+name: {role}
+description: {one-liner}. First saved from /team run on {date}.
+model: claude-sonnet-4-6
+tools: Read, Grep, Glob
+---
+
+{full body used when spawning the teammate}
+
 ## Run history
 
-| Date | Run ID | Task | Result |
-|------|--------|------|--------|
-| {date} | {run_id} | {task} | success |
+| Date | Task | Result |
+|------|------|--------|
+| {date} | {task} | success |
 ```
 
-2. Log: `💾 Saved {role} to .claude/agents/{role}.md — available for future runs`
+After writing each file, **verify it exists**:
+```
+Read: .claude/agents/{role}.md  ← confirms the write succeeded
+```
+
+Only after confirming the file exists, log:
+`💾 Saved {role} to .claude/agents/{role}.md — available for future runs`
+
+If the Write fails for any reason, log the error and continue with the others.
 
 ---
 
