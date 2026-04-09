@@ -1,4 +1,7 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "permissions": {
     "allow": [
       "Read",
@@ -15,6 +18,8 @@
       "Bash(git add*)",
       "Bash(mkdir*)",
       "Bash(ls*)",
+      "Bash(npm test*)",
+      "Bash(pytest*)",
       "mcp__filesystem__read_file",
       "mcp__filesystem__read_multiple_files",
       "mcp__filesystem__write_file",
