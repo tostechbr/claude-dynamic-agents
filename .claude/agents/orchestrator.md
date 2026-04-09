@@ -103,7 +103,7 @@ If complexity is `low` with no ambiguity: build the Task Brief yourself inline.
 
 ## Step 4 — Check the registry
 
-Check for saved agents in this order:
+For each role in the ExecutionPlan, check in this order:
 
 **1. `.claude/agents/{role}.md` exists?**
 ```
@@ -112,15 +112,27 @@ Read: .claude/agents/{role}.md
 → Load it directly — model, tools, and skills are in the frontmatter
 → Adapt the `context` field for the current task
 → Read Run History to understand past usage patterns
+→ **Log: "✅ Loaded {role} from registry (.claude/agents/{role}.md)"**
 
 **2. Else: check memory MCP**
 ```
 mcp__memory__search_nodes: query = "<role> agent"
 ```
 → Rebuild config from saved metadata
+→ **Log: "✅ Loaded {role} from memory MCP"**
 
 **3. Else: build fresh from catalog**
-→ Use `catalog/skills.md`, `catalog/mcps.md`, `catalog/models.md`
+→ Read `catalog/skills.md` to pick skills
+→ Read `catalog/mcps.md` to pick MCPs
+→ Read `catalog/models.md` to pick model
+→ Compose a full agent config inline
+→ **Log: "🆕 Creating NEW agent: {role} — does not exist in registry, building from catalog"**
+→ This agent will be saved to `.claude/agents/{role}.md` in Step 9
+
+> ⚠️ Every task should use the most **specific** role for the work.
+> Do NOT reuse `backend-developer` for database schema design — use `db-architect`.
+> Do NOT reuse `frontend-developer` for CI/CD — use `devops-agent`.
+> Specialized roles produce better output and get saved for reuse.
 
 ---
 
@@ -258,18 +270,39 @@ Agent(
 )
 ```
 
-**New agent (no .md file yet):** start with synthetic frontmatter:
+**New agent (no .md file yet):** build the full agent definition inline and pass it to Agent tool:
 ```
 Agent(
   ---
   name: {role}
+  description: {one-liner about what this agent does}
+  model: {model from catalog/models.md}
+  tools: Read, Write, Edit, Bash, {mcp tools from registry/index.md MCP mapping}
   ---
 
-  {agent instructions and task}
+  # {Role Title}
+
+  You {description} based on the task in your context.
+
+  ## Before starting
+  1. Read workspace/{run_id}/context.json
+  2. Set own status to "running" in outputs.{role}
+  3. Read dependency summaries from outputs
+
+  ## After completing
+  Update context.json outputs for your role — follow rules/agent-contracts.md.
+
+  ---
+  ## Current run
+  Run ID: {run_id}
+  Context JSON: workspace/{run_id}/context.json
+
+  ## Your task
+  {specific context from ExecutionPlan}
 )
 ```
 
-Passing `name:` frontmatter at the top ensures Claude Code labels the subagent correctly in LangSmith traces instead of "general-purpose Subagent".
+Passing `name:` frontmatter at the top ensures Claude Code labels the subagent correctly in LangSmith traces. A new agent built inline this way will be saved as `.claude/agents/{role}.md` in Step 9.
 
 If an agent fails: follow `rules/failure-handling.md`. When spawning a retry or reaction agent, set `trigger_event` in the spawned agent's `context.json` output entry.
 
