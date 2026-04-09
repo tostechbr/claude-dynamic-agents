@@ -1,8 +1,45 @@
 :root {
   font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.5;
-  color: #1a1a1a;
-  background: #fff;
+
+  --color-bg: #fff;
+  --color-bg-surface: #fafafa;
+  --color-text: #1a1a1a;
+  --color-text-secondary: #555;
+  --color-text-muted: #666;
+  --color-text-done: #999;
+  --color-border: #e0e0e0;
+  --color-input-border: #ccc;
+  --color-error: #d32f2f;
+  --color-primary: #4a90d9;
+  --color-primary-hover: #3a7bc8;
+  --color-focus-ring: rgba(74, 144, 217, 0.2);
+  --color-success: #4caf50;
+  --color-success-hover: #43a047;
+  --color-danger: #ef5350;
+  --color-danger-hover: #e53935;
+
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+:root.dark {
+  --color-bg: #1a1a2e;
+  --color-bg-surface: #16213e;
+  --color-text: #e0e0e0;
+  --color-text-secondary: #b0b0b0;
+  --color-text-muted: #9e9e9e;
+  --color-text-done: #666;
+  --color-border: #2a2a4a;
+  --color-input-border: #3a3a5a;
+  --color-error: #ef5350;
+  --color-primary: #5c9ce6;
+  --color-primary-hover: #4a8ad4;
+  --color-focus-ring: rgba(92, 156, 230, 0.3);
+  --color-success: #66bb6a;
+  --color-success-hover: #57a85c;
+  --color-danger: #ef5350;
+  --color-danger-hover: #e53935;
 }
 
 body {
