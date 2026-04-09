@@ -57,6 +57,8 @@ Installed at `.claude/skills/`. Sourced from community (Antigravity registry / A
 | `devops-agent` | `deployment-patterns`, `using-git-worktrees` |
 | `pr-creator` | `using-git-worktrees` |
 | `pr-reviewer` | domain skill + `security-patterns` + `verification-loop` (e.g. `fastapi-patterns`, `security-patterns` for backend PRs) |
+| `test-runner` | `verification-loop` |
+| `bug-fixer` | domain skill matching what broke (e.g. `react-patterns` for frontend failures, `fastapi-patterns` for backend) |
 | `synthesizer` | _(none — reads context.json directly)_ |
 
 ---

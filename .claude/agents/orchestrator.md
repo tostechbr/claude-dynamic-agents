@@ -140,6 +140,8 @@ Agents are split into two categories:
 **Infrastructure agents** (do NOT count toward the limit):
 - `synthesizer` — always last, always present
 - `pr-reviewer` — always present when `needs_git: true` AND `pr-creator` is in the plan
+- `test-runner` — always present when `needs_git: true` (gates pr-creator)
+- `bug-fixer` — spawned reactively by orchestrator if `test-runner` fails (see failure-handling.md Rule 8)
 
 Maximum total agents per run: **7** (5 task + pr-reviewer + synthesizer)
 
@@ -154,6 +156,29 @@ Maximum total agents per run: **7** (5 task + pr-reviewer + synthesizer)
 - Use `catalog/mcps.md` for MCP selection
 - `context` must tell the agent exactly what to do and what to know from prior agents
 - `synthesizer` always last, `depends_on` pointing to all others
+
+### MANDATORY: Test gate rule
+
+**If `needs_git: true` → you MUST add `test-runner` between the last coding agent and `pr-creator`. No exceptions.**
+
+Standard pipeline with test gate:
+```
+{coding-agent} → test-runner → pr-creator → pr-reviewer → synthesizer
+```
+
+```json
+{
+  "role": "test-runner",
+  "model": "claude-sonnet-4-6",
+  "skills": ["verification-loop"],
+  "mcps": ["filesystem"],
+  "depends_on": "{last-coding-agent}",
+  "worktree": null,
+  "context": "Run the test suite for the project. Read target_dir from context.json. For frontend: cd {target_dir}/frontend && npm test -- --run. For backend: pytest -v. Capture full output. If all pass: status done, test_result pass. If any fail: status failed, test_result fail, full output in error field. Do NOT fix any code — only report."
+}
+```
+
+If `test-runner` fails → orchestrator spawns `bug-fixer` reactively (see `rules/failure-handling.md` Rule 8). After `bug-fixer` completes → re-spawn `test-runner`. Only after `test-runner` passes → proceed to `pr-creator`.
 
 ### MANDATORY: PR review rule
 

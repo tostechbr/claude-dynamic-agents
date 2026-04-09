@@ -99,3 +99,5 @@ Always include standard tools: `Read, Write, Edit, Bash`
 | `frontend-developer` | [../agents/frontend-developer.md](../agents/frontend-developer.md) | sonnet | frontend, fullstack | 2026-04-09 |
 | `pr-creator` | [../agents/pr-creator.md](../agents/pr-creator.md) | haiku | frontend, backend, fullstack, infra, fix | 2026-04-09 |
 | `pr-reviewer` | [../agents/pr-reviewer.md](../agents/pr-reviewer.md) | sonnet | frontend, backend, fullstack, infra, fix | 2026-04-09 |
+| `test-runner` | [../agents/test-runner.md](../agents/test-runner.md) | sonnet | frontend, backend, fullstack, fix | 2026-04-09 |
+| `bug-fixer` | [../agents/bug-fixer.md](../agents/bug-fixer.md) | sonnet | frontend, backend, fullstack, fix | 2026-04-09 |

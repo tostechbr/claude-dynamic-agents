@@ -112,6 +112,51 @@ If some agents succeeded and one failed:
 
 ---
 
+## Rule 8 — Test failure loop (Reaction: test-failed)
+
+**Trigger:** `test-runner` sets `status: "failed"` and `test_result: "fail"` in `context.json`
+
+**Reaction routing:**
+
+```
+round 1:
+  → set trigger_event: "reaction:test-failed round=1"
+  → spawn bug-fixer with:
+      worktree: same branch as coding agent
+      context: {
+        "test_output": "<full output from outputs.test-runner.error>",
+        "files_changed": "<files from coding agent outputs>",
+        "target_dir": "<target_dir>"
+      }
+  → bug-fixer fixes source code and sets status: "done"
+  → re-spawn test-runner with trigger_event: "reaction:test-failed round=1"
+
+round 2 (if test-runner fails again):
+  → escalate to user (Rule 5) with:
+      - test output from round 1
+      - what bug-fixer changed (files_changed)
+      - test output from round 2
+```
+
+Maximum 2 fix rounds. Never push a branch with failing tests.
+
+**Pipeline flow with test gate:**
+```
+coding-agent
+     ↓
+test-runner ──── fail ──→ bug-fixer (round 1)
+     ↑                         ↓
+     └──── re-run ─────────────┘
+     ↓ pass
+pr-creator
+     ↓
+pr-reviewer
+     ↓
+synthesizer
+```
+
+---
+
 ## Rule 7 — Run timeout
 
 If a run exceeds 15 minutes without a status update from any agent:
