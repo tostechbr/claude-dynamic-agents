@@ -212,3 +212,84 @@ async def test_create_then_list_round_trip(client: httpx.AsyncClient) -> None:
     assert listed[0]["title"] == created["title"]
     assert listed[0]["description"] == created["description"]
     assert listed[0]["done"] == created["done"]
+
+
+# ---------------------------------------------------------------------------
+# PATCH /tasks/{id}
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_patch_task_happy_path(client: httpx.AsyncClient) -> None:
+    """Create a task then PATCH it → 200 and done is True."""
+    create_response = await client.post("/tasks", json={"title": "Finish report"})
+    task_id = create_response.json()["id"]
+
+    patch_response = await client.patch(f"/tasks/{task_id}")
+
+    assert patch_response.status_code == 200
+    assert patch_response.json()["done"] is True
+
+
+@pytest.mark.asyncio
+async def test_patch_task_not_found(client: httpx.AsyncClient) -> None:
+    """PATCH with a non-existent id returns 404."""
+    response = await client.patch("/tasks/9999")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_patch_task_response_shape(client: httpx.AsyncClient) -> None:
+    """PATCH response includes all required fields: id, title, description, done."""
+    create_response = await client.post(
+        "/tasks", json={"title": "Shape check", "description": "patch shape"}
+    )
+    task_id = create_response.json()["id"]
+
+    patch_response = await client.patch(f"/tasks/{task_id}")
+    data = patch_response.json()
+
+    assert set(data.keys()) >= {"id", "title", "description", "done"}
+    assert data["id"] == task_id
+    assert data["title"] == "Shape check"
+    assert data["description"] == "patch shape"
+    assert data["done"] is True
+
+
+@pytest.mark.asyncio
+async def test_patch_task_idempotent(client: httpx.AsyncClient) -> None:
+    """PATCH an already-done task returns 200 and done remains True."""
+    create_response = await client.post("/tasks", json={"title": "Already done"})
+    task_id = create_response.json()["id"]
+
+    first_patch = await client.patch(f"/tasks/{task_id}")
+    assert first_patch.status_code == 200
+    assert first_patch.json()["done"] is True
+
+    second_patch = await client.patch(f"/tasks/{task_id}")
+    assert second_patch.status_code == 200
+    assert second_patch.json()["done"] is True
+
+
+@pytest.mark.asyncio
+async def test_patch_task_does_not_affect_other_tasks(client: httpx.AsyncClient) -> None:
+    """PATCH one task → GET /tasks shows only that task as done; the other is unchanged."""
+    await client.post("/tasks", json={"title": "Task One"})
+    await client.post("/tasks", json={"title": "Task Two"})
+
+    list_before = await client.get("/tasks")
+    task_one_id = list_before.json()[0]["id"]
+
+    await client.patch(f"/tasks/{task_one_id}")
+
+    list_after = await client.get("/tasks")
+    tasks = list_after.json()
+
+    done_tasks = [t for t in tasks if t["done"] is True]
+    pending_tasks = [t for t in tasks if t["done"] is False]
+
+    assert len(done_tasks) == 1
+    assert done_tasks[0]["id"] == task_one_id
+    assert len(pending_tasks) == 1
+    assert pending_tasks[0]["title"] == "Task Two"
