@@ -8,6 +8,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "tasks.db")
 CREATE_TASKS_TABLE = """
     CREATE TABLE IF NOT EXISTS tasks (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL DEFAULT 1,
         title       TEXT    NOT NULL,
         description TEXT,
         done        INTEGER NOT NULL DEFAULT 0,
