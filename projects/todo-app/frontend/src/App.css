@@ -46,6 +46,19 @@
   box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
 }
 
+.form-field select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-field select:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+}
+
 .form-error {
   color: #d32f2f;
   font-size: 0.875rem;
@@ -54,7 +67,7 @@
 
 button[type="submit"] {
   padding: 0.5rem 1rem;
-  background: #4a90d9;
+  background: #d946ef;
   color: white;
   border: none;
   border-radius: 4px;
@@ -63,7 +76,7 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover:not(:disabled) {
-  background: #3a7bc8;
+  background: #c026d3;
 }
 
 button[type="submit"]:disabled {
@@ -102,7 +115,7 @@ button[type="submit"]:disabled {
 
 .btn-done {
   padding: 0.25rem 0.5rem;
-  background: #4caf50;
+  background: #d946ef;
   color: white;
   border: none;
   border-radius: 4px;
@@ -111,12 +124,12 @@ button[type="submit"]:disabled {
 }
 
 .btn-done:hover {
-  background: #43a047;
+  background: #c026d3;
 }
 
 .btn-delete {
   padding: 0.25rem 0.5rem;
-  background: #ef5350;
+  background: #d946ef;
   color: white;
   border: none;
   border-radius: 4px;
@@ -125,7 +138,7 @@ button[type="submit"]:disabled {
 }
 
 .btn-delete:hover {
-  background: #e53935;
+  background: #c026d3;
 }
 
 .task-item:first-child {
@@ -144,6 +157,36 @@ button[type="submit"]:disabled {
 .task-description {
   font-size: 0.875rem;
   color: #666;
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: white;
+  white-space: nowrap;
+}
+
+.priority-low {
+  background: #22c55e;
+}
+
+.priority-medium {
+  background: #eab308;
+  color: #1a1a1a;
+}
+
+.priority-high {
+  background: #ef4444;
 }
 
 .task-list-loading,

@@ -10,7 +10,8 @@ CREATE_TASKS_TABLE = """
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         title       TEXT    NOT NULL,
         description TEXT,
-        done        INTEGER NOT NULL DEFAULT 0
+        done        INTEGER NOT NULL DEFAULT 0,
+        priority    TEXT    NOT NULL DEFAULT 'medium'
     )
 """
 

@@ -37,7 +37,7 @@ describe("TaskForm", () => {
     await user.click(screen.getByRole("button", { name: "Add Task" }))
 
     expect(onSubmit).toHaveBeenCalledOnce()
-    expect(onSubmit).toHaveBeenCalledWith({ title: "Buy milk" })
+    expect(onSubmit).toHaveBeenCalledWith({ title: "Buy milk", priority: "medium" })
   })
 
   it("calls onSubmit with title and description when provided", async () => {
@@ -53,6 +53,7 @@ describe("TaskForm", () => {
     expect(onSubmit).toHaveBeenCalledWith({
       title: "Buy milk",
       description: "From the store",
+      priority: "medium",
     })
   })
 
@@ -99,7 +100,7 @@ describe("TaskForm", () => {
     await user.type(screen.getByLabelText("Title"), "  Buy milk  ")
     await user.click(screen.getByRole("button", { name: "Add Task" }))
 
-    expect(onSubmit).toHaveBeenCalledWith({ title: "Buy milk" })
+    expect(onSubmit).toHaveBeenCalledWith({ title: "Buy milk", priority: "medium" })
   })
 
   it("shows Adding... text while submitting", async () => {

@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react"
-import type { TaskCreatePayload } from "../types/task"
+import type { TaskCreatePayload, Priority } from "../types/task"
 
 interface TaskFormProps {
   readonly onSubmit: (payload: TaskCreatePayload) => Promise<void>
@@ -8,6 +8,7 @@ interface TaskFormProps {
 export function TaskForm({ onSubmit }: TaskFormProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [priority, setPriority] = useState<Priority>("medium")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,10 +27,12 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
       const payload: TaskCreatePayload = {
         title: trimmedTitle,
         ...(description.trim() ? { description: description.trim() } : {}),
+        priority,
       }
       await onSubmit(payload)
       setTitle("")
       setDescription("")
+      setPriority("medium")
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create task"
       setError(message)
@@ -62,6 +65,19 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
           placeholder="Add details..."
           disabled={submitting}
         />
+      </div>
+      <div className="form-field">
+        <label htmlFor="task-priority">Priority</label>
+        <select
+          id="task-priority"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as Priority)}
+          disabled={submitting}
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
       </div>
       {error && <p className="form-error" role="alert">{error}</p>}
       <button type="submit" disabled={submitting || !title.trim()}>

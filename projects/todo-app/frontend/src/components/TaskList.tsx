@@ -26,7 +26,12 @@ export function TaskList({ tasks, loading, error, onMarkDone, onDelete }: TaskLi
       {tasks.map((task) => (
         <li key={task.id} className={`task-item ${task.done ? "task-done" : ""}`}>
           <div className="task-content">
-            <span className="task-title">{task.title}</span>
+            <div className="task-header">
+              <span className="task-title">{task.title}</span>
+              <span className={`priority-badge priority-${task.priority}`}>
+                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+              </span>
+            </div>
             {task.description && (
               <span className="task-description">{task.description}</span>
             )}

@@ -4,13 +4,14 @@ import { App } from "./App"
 
 vi.mock("./services/api", () => ({
   fetchTasks: vi.fn().mockResolvedValue([
-    { id: 1, title: "Test task", description: null, done: false },
+    { id: 1, title: "Test task", description: null, done: false, priority: "medium" },
   ]),
   createTask: vi.fn().mockResolvedValue({
     id: 2,
     title: "New task",
     description: null,
     done: false,
+    priority: "medium",
   }),
 }))
 

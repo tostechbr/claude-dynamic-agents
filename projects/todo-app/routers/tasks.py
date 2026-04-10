@@ -4,7 +4,7 @@ from fastapi.responses import Response
 import aiosqlite
 
 from database import get_db
-from schemas import TaskCreate, TaskResponse
+from schemas import Priority, TaskCreate, TaskResponse
 
 router = APIRouter()
 
@@ -15,12 +15,12 @@ async def create_task(
     db: aiosqlite.Connection = Depends(get_db),
 ) -> TaskResponse:
     cursor = await db.execute(
-        "INSERT INTO tasks (title, description) VALUES (?, ?)",
-        (payload.title, payload.description),
+        "INSERT INTO tasks (title, description, priority) VALUES (?, ?, ?)",
+        (payload.title, payload.description, payload.priority.value),
     )
     await db.commit()
     row = await db.execute(
-        "SELECT id, title, description, done FROM tasks WHERE id = ?",
+        "SELECT id, title, description, done, priority FROM tasks WHERE id = ?",
         (cursor.lastrowid,),
     )
     task = await row.fetchone()
@@ -29,6 +29,7 @@ async def create_task(
         title=task["title"],
         description=task["description"],
         done=bool(task["done"]),
+        priority=Priority(task["priority"]),
     )
 
 
@@ -37,7 +38,7 @@ async def list_tasks(
     db: aiosqlite.Connection = Depends(get_db),
 ) -> list[TaskResponse]:
     cursor = await db.execute(
-        "SELECT id, title, description, done FROM tasks ORDER BY id"
+        "SELECT id, title, description, done, priority FROM tasks ORDER BY id"
     )
     rows = await cursor.fetchall()
     return [
@@ -46,6 +47,7 @@ async def list_tasks(
             title=row["title"],
             description=row["description"],
             done=bool(row["done"]),
+            priority=Priority(row["priority"]),
         )
         for row in rows
     ]
@@ -59,7 +61,7 @@ async def mark_task_done(
     await db.execute("UPDATE tasks SET done = 1 WHERE id = ?", (id,))
     await db.commit()
     cursor = await db.execute(
-        "SELECT id, title, description, done FROM tasks WHERE id = ?", (id,)
+        "SELECT id, title, description, done, priority FROM tasks WHERE id = ?", (id,)
     )
     row = await cursor.fetchone()
     if row is None:
@@ -69,6 +71,7 @@ async def mark_task_done(
         title=row["title"],
         description=row["description"],
         done=bool(row["done"]),
+        priority=Priority(row["priority"]),
     )
 
 
@@ -77,7 +80,9 @@ async def delete_task(
     id: int,
     db: aiosqlite.Connection = Depends(get_db),
 ) -> Response:
-    cursor = await db.execute("SELECT id FROM tasks WHERE id = ?", (id,))
+    cursor = await db.execute(
+        "SELECT id, title, description, done, priority FROM tasks WHERE id = ?", (id,)
+    )
     row = await cursor.fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Task not found")

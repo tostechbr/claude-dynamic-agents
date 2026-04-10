@@ -4,9 +4,9 @@ import { TaskList } from "./TaskList"
 import type { Task } from "../types/task"
 
 const MOCK_TASKS: readonly Task[] = [
-  { id: 1, title: "Buy groceries", description: "Milk, eggs, bread", done: false },
-  { id: 2, title: "Walk the dog", description: null, done: true },
-  { id: 3, title: "Read a book", description: "Chapter 5", done: false },
+  { id: 1, title: "Buy groceries", description: "Milk, eggs, bread", done: false, priority: "medium" },
+  { id: 2, title: "Walk the dog", description: null, done: true, priority: "high" },
+  { id: 3, title: "Read a book", description: "Chapter 5", done: false, priority: "low" },
 ]
 
 describe("TaskList", () => {
@@ -41,7 +41,7 @@ describe("TaskList", () => {
 
   it("does not render description for tasks without one", () => {
     const tasksWithoutDesc: readonly Task[] = [
-      { id: 1, title: "No desc task", description: null, done: false },
+      { id: 1, title: "No desc task", description: null, done: false, priority: "medium" },
     ]
     render(<TaskList tasks={tasksWithoutDesc} loading={false} error={null} />)
     expect(screen.getByText("No desc task")).toBeInTheDocument()
