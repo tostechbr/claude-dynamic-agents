@@ -8,10 +8,12 @@ Once installed, every `/tos` run is automatically traced — no code changes nee
 
 ## What you see in LangSmith
 
-For a typical `/tos` run, the trace hierarchy looks like this:
+### `/tos` — Subagents (nested hierarchy)
+
+Subagents spawned via the `Agent` tool appear nested under the parent session:
 
 ```
-Claude Code Turn  (root)
+Claude Code Turn  (root — orchestrator)
 ├── Claude  (LLM call — orchestrator reasoning)
 ├── Agent tool  (spawning brainstorm)
 │   └── Claude Code Turn  (brainstorm subagent)
@@ -26,6 +28,27 @@ Claude Code Turn  (root)
 │       └── Claude  (LLM call)
 └── Claude  (LLM call — final report)
 ```
+
+### `/team` — Agent Teams (separate traces)
+
+Agent Teams run each teammate as an independent Claude Code process. They appear as separate top-level traces in LangSmith — not nested, but all tracked:
+
+```
+Claude Code Turn  user: /team adiciona...   493s  1,861,847 tokens  ← team lead
+Claude Code Turn  user: <teammate-mes...     38s    206,013 tokens  ← teammate 1
+Claude Code Turn  user: <teammate-mes...      2s     99,767 tokens  ← teammate 2
+Claude Code Turn  user: <teammate-mes...      3s     99,653 tokens  ← teammate 3
+Claude Code Turn  user: <teammate-mes...      3s     99,640 tokens  ← teammate 4
+```
+
+This is by design — each teammate is an independent session with its own context window. The tradeoff vs subagents:
+
+| | `/tos` subagents | `/team` Agent Teams |
+|---|---|---|
+| LangSmith | Nested hierarchy | Separate top-level traces |
+| Parallelism | Limited | Real parallel processes |
+| Inter-agent communication | Only via team lead | Direct messaging |
+| Token visibility | All in one trace | Per-teammate breakdown |
 
 Each turn from the same Claude Code session is grouped using a shared `thread_id`, visible in the **Threads** tab of your LangSmith project.
 
