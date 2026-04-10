@@ -4,9 +4,10 @@ from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import ALLOWED_ORIGINS
 from database import init_db
 from routers.tasks import router as tasks_router
+
+ALLOWED_ORIGINS = ["*"]  # Allow all origins for development
 
 
 @asynccontextmanager
