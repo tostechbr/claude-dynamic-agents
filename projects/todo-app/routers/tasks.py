@@ -81,7 +81,7 @@ async def delete_task(
     db: aiosqlite.Connection = Depends(get_db),
 ) -> Response:
     cursor = await db.execute(
-        "SELECT id, title, description, done, priority FROM tasks WHERE id = ?", (id,)
+        "SELECT id FROM tasks WHERE id = ?", (id,)
     )
     row = await cursor.fetchone()
     if row is None:

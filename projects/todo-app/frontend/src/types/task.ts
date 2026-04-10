@@ -11,5 +11,5 @@ export interface Task {
 export interface TaskCreatePayload {
   readonly title: string
   readonly description?: string
-  readonly priority?: Priority
+  readonly priority: Priority
 }
