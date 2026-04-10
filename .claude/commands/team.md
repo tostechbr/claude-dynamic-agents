@@ -71,15 +71,29 @@ Based on mode and domain, decide which specialist roles are needed:
 
 ## Step 4 — Check registry and load skills
 
-### 4a — Check registry
+### 4a — Check registry and save new agents immediately
 
 For each role:
 ```
 Read: .claude/agents/{role}.md
 ```
 
-→ `✅ {role} — loaded from registry`
-→ `🆕 {role} — building dynamically`
+**If the file exists:**
+→ Log: `✅ {role} — loaded from registry`
+
+**If the file does NOT exist:**
+→ Log: `🆕 {role} — building dynamically`
+→ Build the full definition using template in 4c (with skills injected)
+→ **Write to disk NOW — before spawning, not after:**
+```
+Write: .claude/agents/{role}.md
+Read:  .claude/agents/{role}.md  ← verify it exists
+```
+→ Log: `💾 {role} saved to .claude/agents/{role}.md`
+
+> ⚠️ Saving happens HERE in Step 4, not at the end.
+> By the time you spawn the teammate, the .md file already exists.
+> Step 7 is only a final verification — not the actual save.
 
 ### 4b — Load relevant skills
 
