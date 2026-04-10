@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/api/notesapi.ts","./src/components/header.tsx","./src/components/modal.tsx","./src/components/notecard.tsx","./src/components/noteform.tsx","./src/components/notelist.tsx","./src/components/tagfilter.tsx","./src/hooks/usenotes.ts","./src/hooks/usetagfilter.ts"],"version":"5.9.3"}
