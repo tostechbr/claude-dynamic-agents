@@ -1,0 +1,3 @@
+This file is a placeholder to establish the feature branch.
+
+The actual implementation files (DarkModeToggle.tsx, TaskList.tsx updates, App.tsx, styling, etc.) should be committed separately during the development phase.
