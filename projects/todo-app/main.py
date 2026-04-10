@@ -7,12 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
 from routers.tasks import router as tasks_router
 
-ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-]
+ALLOWED_ORIGINS = ["*"]  # Allow all origins for development
 
 
 @asynccontextmanager

@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from fastapi.responses import Response
-
 import aiosqlite
 
 from database import get_db
@@ -24,6 +23,8 @@ async def create_task(
         (cursor.lastrowid,),
     )
     task = await row.fetchone()
+    if task is None:
+        raise HTTPException(status_code=500, detail="Failed to create task")
     return TaskResponse(
         id=task["id"],
         title=task["title"],
@@ -55,29 +56,30 @@ async def list_tasks(
 
 @router.patch("/{id}", response_model=TaskResponse)
 async def mark_task_done(
-    id: int,
+    id: int = Path(gt=0),
     db: aiosqlite.Connection = Depends(get_db),
 ) -> TaskResponse:
-    await db.execute("UPDATE tasks SET done = 1 WHERE id = ?", (id,))
-    await db.commit()
     cursor = await db.execute(
-        "SELECT id, title, description, done, priority FROM tasks WHERE id = ?", (id,)
+        "SELECT id, title, description, done, priority FROM tasks WHERE id = ?",
+        (id,),
     )
     row = await cursor.fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Task not found")
+    await db.execute("UPDATE tasks SET done = 1 WHERE id = ?", (id,))
+    await db.commit()
     return TaskResponse(
         id=row["id"],
         title=row["title"],
         description=row["description"],
-        done=bool(row["done"]),
+        done=True,
         priority=Priority(row["priority"]),
     )
 
 
 @router.delete("/{id}", status_code=204)
 async def delete_task(
-    id: int,
+    id: int = Path(gt=0),
     db: aiosqlite.Connection = Depends(get_db),
 ) -> Response:
     cursor = await db.execute(
